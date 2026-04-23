@@ -17,7 +17,8 @@ loop.sh はこのファイルを `gh pr create` の入力に使います。
 
 ## 手順
 
-1. `<cycle_dir>/plan.md` `engineering-summary.md` `design-summary.md` を読む。
+1. `<cycle_dir>/plan.md`, `engineering-summary.md`, `design-summary.md` に加えて、
+   `git log --format=%B -1` で EM フェーズのコミットメッセージ（申し送り）を読む。
 2. marketer-1 にタイトルと Summary を書かせる。タイトルは 70 文字以内、動詞始まり。
 3. marketer-2 に Test Plan を書かせる。各項目はチェックボックス `- [ ]` で。
 4. marketer-3 に 2〜3 文のリリースノート候補を書かせる。
