@@ -1,74 +1,89 @@
 ---
-description: Run the Planner → Generator → Evaluator harness pipeline. Usage `/trinity <request>` or `/trinity --max-iter=5 <request>`.
-argument-hint: [--max-iter=N] <feature request in 1-4 sentences>
+description: Planner → Generator → Evaluator のハーネスパイプラインを実行する。使用例 `/trinity <要件>` または `/trinity --max-iter=5 <要件>`。
+argument-hint: [--max-iter=N] <1〜4文の要件>
 ---
 
-# /trinity — three-agent harness pipeline
+# /trinity — 3エージェント・ハーネスパイプライン
 
-Orchestrate the harness: Planner expands the request, Generator implements & commits, Evaluator independently judges. Loop until PASS or `max_iter` is hit.
+ハーネスを取り回すスラッシュコマンドである。Plannerが要件を計画に展開し、Generatorが実装してコミットし、Evaluatorが独立に判定する。判定が PASS になるか、`max_iter` に到達するまで繰り返す。
 
-## Arguments
+## 引数
 
-Raw arguments: `$ARGUMENTS`
+生の引数は `$ARGUMENTS` で受け取る。次の手順で解釈する。
 
-Parse them as follows:
-1. If `$ARGUMENTS` starts with `--max-iter=N` (where N is a positive integer), set `MAX_ITER = N` and strip that token. Otherwise `MAX_ITER = 15` (default).
-2. The remainder is the **request**. If empty, ask the user for a 1-4 sentence request and stop — do not proceed.
+`$ARGUMENTS` の先頭が `--max-iter=N`（N は正の整数）であれば、`MAX_ITER = N` とし、そのトークンを取り除く。先頭が一致しない場合は `MAX_ITER = 15`（既定値）を使う。
 
-## Pre-flight
+残りを「要件」として扱う。要件が空ならユーザーに1〜4文の要件を求めて停止する。先には進めない。
 
-Before launching agents:
-- Confirm `git status` is clean (no uncommitted changes). If dirty, **stop** and tell the user to commit/stash first — the Evaluator relies on a clean baseline to read each sprint's diff.
-- Confirm the current branch is the intended working branch (show it to the user, do not switch).
-- Ensure `.claude/trinity/` exists (`mkdir -p .claude/trinity`).
+## プリフライト
 
-## Pipeline (loop, n = 1 .. MAX_ITER)
+エージェント起動の前に次を確認する。
 
-### 1. Planner
-Launch the `planner` subagent with:
-- The request (verbatim).
-- `Iteration: <n>`.
-- If `n > 1`: the prior plan path and the prior evaluator report path.
+`git status` がクリーンであること。汚れている場合は停止し、ユーザーにコミットまたはスタッシュを依頼する。Evaluatorは各スプリントの差分をクリーンなベースラインから読むため、未コミットのノイズはこの契約を壊す。
 
-Capture the **plan path** it returns. If Planner asked a clarifying question, surface it to the user and stop.
+現在のブランチが意図したワーキングブランチであること。ブランチの確認はユーザーに表示するが、自動切替はしない。
 
-### 2. Generator
-Launch the `generator` subagent with:
-- The plan path.
-- `Iteration: <n>`.
+`.claude/trinity/` を `mkdir -p` で確保する。
 
-Capture the verification report and the **commit SHA**. If Generator could not commit (verification failed and it could not fix it), stop and surface the failure — do not call Evaluator on a non-existent commit.
+## パイプライン（n = 1 .. MAX_ITER のループ）
 
-### 3. Evaluator
-Launch the `evaluator` subagent with:
-- The plan path.
-- The commit SHA.
-- The Generator's verification report.
+### Planner
 
-Capture the **evaluation report path** and the **verdict** (PASS / NEEDS_REVISION / FAIL).
+`planner` サブエージェントを次の入力で起動する。
 
-### 4. Branching
-- **PASS** → print a one-line summary to the user (commit SHA, plan path, eval path) and exit the loop.
-- **NEEDS_REVISION** and `n < MAX_ITER` → continue loop (Planner gets the eval report on next pass; it should update the existing plan in place, not create a new one).
-- **FAIL** → continue loop the same way; Planner is expected to re-plan more aggressively.
-- `n == MAX_ITER` and not PASS → stop. Print the latest eval report path and the unresolved findings. Do **not** silently keep iterating.
+- 要件（原文ママ）
+- `Iteration: <n>`
+- `n > 1` の場合は、直前の計画パスと直前のEvaluatorレポートのパス
 
-## Output to user
+返却された計画パスを保持する。Plannerが確認のための質問をユーザーに投げた場合は、その内容をユーザーに見せて停止する。
 
-After the loop ends, print exactly:
+### Generator
 
-```
+`generator` サブエージェントを次の入力で起動する。
+
+- 計画ファイルのパス
+- `Iteration: <n>`
+
+返却された検証レポートとコミットSHAを保持する。Generatorが検証失敗で自力修正もできずコミットを作れなかった場合は、停止して失敗内容をユーザーに報告する。存在しないコミットを Evaluator に渡してはいけない。
+
+### Evaluator
+
+`evaluator` サブエージェントを次の入力で起動する。
+
+- 計画ファイルのパス
+- コミットSHA
+- Generatorの検証レポート
+
+返却された評価レポートのパスと判定（PASS / NEEDS_REVISION / FAIL）を保持する。
+
+### 分岐
+
+PASS の場合は、コミットSHA・計画パス・評価パスをまとめた1行サマリをユーザーに出力し、ループを抜ける。
+
+NEEDS_REVISION で `n < MAX_ITER` の場合はループを継続する。Plannerは次の周回で評価レポートを受け取り、計画ファイルを新規作成せず上書きする。
+
+FAIL の場合も同じく次の周回に進む。Plannerはより踏み込んだ再計画を行う。
+
+`n == MAX_ITER` で PASS になっていない場合は停止する。最新の評価レポートのパスと未解決の指摘を表示する。黙って繰り返してはいけない。
+
+## ユーザーへの出力
+
+ループ終了時に次の形式でちょうど印字する。
+
+```shell
 Trinity result: <PASS | NEEDS_REVISION at iter <n> | FAIL at iter <n>>
-Plan:    <plan path>
-Commit:  <last commit SHA>
-Eval:    <last eval report path>
+Plan:    <計画ファイルのパス>
+Commit:  <最後のコミットSHA>
+Eval:    <最後の評価レポートのパス>
 Iters:   <n>/<MAX_ITER>
 ```
 
-Followed by a 2-3 sentence summary in plain English. No more.
+その後に2〜3文の平易な要約を添える。それ以上は書かない。
 
-## Constraints on the orchestrator (you)
+## オーケストレーター（あなた）への制約
 
-- Run subagents **sequentially**, not in parallel — each step depends on the previous.
-- Do **not** read or edit code yourself between steps. Pass paths/SHAs only. The whole point of the harness is that each agent works from artifacts, not your context.
-- Do **not** summarize agent outputs into the next agent's prompt — pass the file paths and let the next agent read them. This preserves the independence the Evaluator needs.
+サブエージェントは並列ではなく直列に呼び出す。各段は前段の出力に依存するためである。
+
+段と段のあいだで、コードを自分で読んだり編集したりしない。受け渡しはパスとSHAだけにする。各エージェントが成果物（ファイル）から動くという原則がハーネスの本質である。
+
+エージェントの出力を要約して次のエージェントに渡さない。ファイルパスを渡し、次のエージェントに自分で読ませる。Evaluatorに必要な独立性はこれで担保される。
