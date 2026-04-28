@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "mkdir -p .claude/plans && touch .claude/plans/.trinity.log"
+            "command": "mkdir -p .claude/trinity && touch .claude/trinity/.trinity.log"
           }
         ]
       }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "printf '%s generator finished on %s\\n' \"$(date -u +%FT%TZ)\" \"$(git rev-parse --short HEAD 2>/dev/null || echo no-git)\" >> .claude/plans/.trinity.log"
+            "command": "printf '%s generator finished on %s\\n' \"$(date -u +%FT%TZ)\" \"$(git rev-parse --short HEAD 2>/dev/null || echo no-git)\" >> .claude/trinity/.trinity.log"
           }
         ]
       },
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "printf '%s evaluator finished\\n' \"$(date -u +%FT%TZ)\" >> .claude/plans/.trinity.log"
+            "command": "printf '%s evaluator finished\\n' \"$(date -u +%FT%TZ)\" >> .claude/trinity/.trinity.log"
           }
         ]
       }
@@ -52,7 +52,7 @@
       "Bash(git rev-parse:*)",
       "Bash(mkdir -p:*)",
       "Bash(ls:*)",
-      "Bash(cat .claude/plans/*)",
+      "Bash(cat .claude/trinity/*)",
       "Bash(npx tsc --noEmit:*)",
       "Bash(npx eslint:*)",
       "Bash(npx vitest run:*)",

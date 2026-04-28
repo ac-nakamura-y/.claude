@@ -35,7 +35,7 @@ You are the **Evaluator** — the third stage of the Trinity harness. Your job i
 3. Run, fresh, the verification chain the plan mandated. Capture exit codes and output snippets.
 4. For each acceptance criterion: emit PASS or FAIL with at least one `path:line` citation.
 5. Score each of the four axes PASS/FAIL.
-6. Write the report to `.claude/plans/<plan-stem>.eval-<iteration>.md` using the template below, then output **only** that path.
+6. Write the report to `.claude/trinity/<plan-stem>.eval-<iteration>.md` using the template below, then output **only** that path.
 
 # Verdict rules
 

@@ -26,7 +26,7 @@ stage focused and lets the evaluator stay independently skeptical.
 │   └── evaluator.md    # sonnet · diff + plan → verdict
 ├── commands/
 │   └── trinity.md      # /trinity orchestrator
-├── plans/              # plan files + per-iteration eval reports (created at runtime)
+├── trinity/            # plan files + per-iteration eval reports (created at runtime)
 └── settings.json       # hooks + permission allowlist
 ```
 
@@ -36,9 +36,9 @@ Agents do not see each other's chat context. They communicate through files:
 
 | Producer  | File                                             | Consumer  |
 |-----------|--------------------------------------------------|-----------|
-| Planner   | `.claude/plans/<YYYYMMDD-HHMM>-<slug>.md`        | Generator, Evaluator |
+| Planner   | `.claude/trinity/<YYYYMMDD-HHMM>-<slug>.md`        | Generator, Evaluator |
 | Generator | a single git commit (SHA passed by orchestrator) | Evaluator |
-| Evaluator | `.claude/plans/<plan-stem>.eval-<n>.md`          | Planner (next iter) |
+| Evaluator | `.claude/trinity/<plan-stem>.eval-<n>.md`          | Planner (next iter) |
 
 This is what keeps the evaluator independent: it reads the plan and the diff,
 not the generator's reasoning.
@@ -60,8 +60,10 @@ Override per-agent via the `model:` field in each agent's frontmatter.
 /trinity --max-iter=5 Migrate the auth module from JWT to session cookies.
 ```
 
-Default `MAX_ITER` is 3. Increase only when you genuinely want deeper
-self-correction — Opus × N iterations gets expensive fast.
+Default `MAX_ITER` is 15. Lower it (`--max-iter=3`) for quick iteration on
+small tasks — at 15 iterations Opus × N can get expensive, so the default
+suits long-running, high-quality tasks where you want the harness to keep
+correcting itself rather than bouncing back to you early.
 
 ### Pre-flight contract
 
@@ -103,10 +105,10 @@ evidence or carries the finding forward.
 
 ## Hooks (`settings.json`)
 
-- **SessionStart** — ensures `.claude/plans/` exists and a `.trinity.log` is
+- **SessionStart** — ensures `.claude/trinity/` exists and a `.trinity.log` is
   ready.
 - **SubagentStop (`generator`/`evaluator`)** — appends a timestamped line to
-  `.claude/plans/.trinity.log`. Useful for cost auditing and post-mortems.
+  `.claude/trinity/.trinity.log`. Useful for cost auditing and post-mortems.
 - **PostToolUse (`Edit|Write`)** — if you edit an agent or command file,
   warns when the YAML frontmatter delimiter is missing. Keeps these files
   from silently breaking.

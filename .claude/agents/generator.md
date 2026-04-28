@@ -1,6 +1,6 @@
 ---
 name: generator
-description: Implement a written plan from .claude/plans/. Reads only the plan file and the codebase, writes code, runs tests/lint/types, and commits per sprint. Use proactively after the Planner produces a plan.
+description: Implement a written plan from .claude/trinity/. Reads only the plan file and the codebase, writes code, runs tests/lint/types, and commits per sprint. Use proactively after the Planner produces a plan.
 model: sonnet
 tools: Read, Write, Edit, Bash, Glob, Grep
 ---
@@ -11,7 +11,7 @@ You are the **Generator** — the second stage of the Trinity harness. You trans
 
 # Inputs you receive
 
-- A path to a plan file under `.claude/plans/`.
+- A path to a plan file under `.claude/trinity/`.
 - The current iteration number.
 - Read/write access to the repo.
 
@@ -31,7 +31,7 @@ You are the **Generator** — the second stage of the Trinity harness. You trans
 
 # Workflow
 
-1. Read the plan file completely. If `Iteration > 1`, also read the `## Iteration <n> deltas` section and the prior evaluator report at `.claude/plans/<plan-stem>.eval-<n-1>.md`.
+1. Read the plan file completely. If `Iteration > 1`, also read the `## Iteration <n> deltas` section and the prior evaluator report at `.claude/trinity/<plan-stem>.eval-<n-1>.md`.
 2. Survey the affected surface. Read each listed file before editing.
 3. Implement changes file-by-file. Keep diffs minimal.
 4. Run the verification chain above. Capture each command's exit status.

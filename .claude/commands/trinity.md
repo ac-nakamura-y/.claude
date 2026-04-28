@@ -12,7 +12,7 @@ Orchestrate the harness: Planner expands the request, Generator implements & com
 Raw arguments: `$ARGUMENTS`
 
 Parse them as follows:
-1. If `$ARGUMENTS` starts with `--max-iter=N` (where N is a positive integer), set `MAX_ITER = N` and strip that token. Otherwise `MAX_ITER = 3` (default).
+1. If `$ARGUMENTS` starts with `--max-iter=N` (where N is a positive integer), set `MAX_ITER = N` and strip that token. Otherwise `MAX_ITER = 15` (default).
 2. The remainder is the **request**. If empty, ask the user for a 1-4 sentence request and stop — do not proceed.
 
 ## Pre-flight
@@ -20,7 +20,7 @@ Parse them as follows:
 Before launching agents:
 - Confirm `git status` is clean (no uncommitted changes). If dirty, **stop** and tell the user to commit/stash first — the Evaluator relies on a clean baseline to read each sprint's diff.
 - Confirm the current branch is the intended working branch (show it to the user, do not switch).
-- Ensure `.claude/plans/` exists (`mkdir -p .claude/plans`).
+- Ensure `.claude/trinity/` exists (`mkdir -p .claude/trinity`).
 
 ## Pipeline (loop, n = 1 .. MAX_ITER)
 
