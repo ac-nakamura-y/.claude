@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mkdir -p .claude/plans && touch .claude/plans/.trinity.log"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "generator",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '%s generator finished on %s\\n' \"$(date -u +%FT%TZ)\" \"$(git rev-parse --short HEAD 2>/dev/null || echo no-git)\" >> .claude/plans/.trinity.log"
+          }
+        ]
+      },
+      {
+        "matcher": "evaluator",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '%s evaluator finished\\n' \"$(date -u +%FT%TZ)\" >> .claude/plans/.trinity.log"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"$(jq -r '.tool_input.file_path // empty' 2>/dev/null)\"; case \"$f\" in *.claude/agents/*.md|*.claude/commands/*.md) head -1 \"$f\" 2>/dev/null | grep -q '^---$' || echo 'WARN: agent/command file missing YAML frontmatter delimiter ---' >&2 ;; esac"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(mkdir -p:*)",
+      "Bash(ls:*)",
+      "Bash(cat .claude/plans/*)",
+      "Bash(npx tsc --noEmit:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx vitest run:*)",
+      "Bash(npx jest:*)",
+      "Bash(pytest:*)",
+      "Bash(ruff check:*)",
+      "Bash(mypy:*)"
+    ]
+  }
+}
