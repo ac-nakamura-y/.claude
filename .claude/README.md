@@ -15,29 +15,40 @@
 
 ## ファイル構成
 
-ハーネスはリポジトリ直下の `.claude/` 以下に閉じている。
+エージェント定義とコマンドはリポジトリの `.claude/` 以下に、ランタイム成果物はプロジェクト直下の `.trinity/` 以下に置く。
 
 ```shell
 .claude/
 ├── agents/
-│   ├── planner.md      # opus  · 要件 → 計画ファイル
-│   ├── generator.md    # sonnet · 計画 → コード＋コミット
-│   └── evaluator.md    # sonnet · 差分＋計画 → 判定
+│   ├── planner.md      # opus  · 要件 → plan.md
+│   ├── generator.md    # sonnet · plan.md → コード＋コミット
+│   └── evaluator.md    # sonnet · diff＋plan.md → eval-N.md
 ├── commands/
 │   └── trinity.md      # /trinity オーケストレーター
-├── trinity/            # 計画ファイル＋イテレーションごとの評価レポート（実行時生成）
 └── settings.json       # フックと許可リスト
+
+.trinity/                                   # /trinity 起動時に生成
+├── trinity.log                             # 全 run 共通の時系列ログ
+├── 20260429T153000Z-add-theme-toggle/      # run ディレクトリ（UTC基本形式 + slug）
+│   ├── plan.md                             # Planner 出力
+│   ├── eval-1.md                           # Evaluator 出力（イテレーション1）
+│   └── eval-2.md                           # 〃 （イテレーション2）
+└── 20260428T091200Z-fix-login-bug/
+    ├── plan.md
+    └── eval-1.md
 ```
+
+run ディレクトリ名は UTC 基本形式のタイムスタンプと、要件から派生した英字 kebab-case の slug を `-` で連結する。コロンを含まないので Windows でも安全に扱える。
 
 ## ファイルベースで通信する
 
-サブエージェントは互いのチャットコンテキストを見ない。ファイルを介して受け渡しを行う。
+サブエージェントは互いのチャットコンテキストを見ない。ファイルを介して受け渡しを行う。オーケストレーターは `RUN_DIR` の絶対パスだけを各段に渡す。
 
 | 出力者 | ファイル | 入力者 |
 | --- | --- | --- |
-| Planner | `.claude/trinity/<YYYYMMDD-HHMM>-<slug>.md` | Generator、Evaluator |
+| Planner | `${RUN_DIR}/plan.md` | Generator、Evaluator |
 | Generator | gitコミット1つ（SHAをオーケストレーターが渡す） | Evaluator |
-| Evaluator | `.claude/trinity/<plan-stem>.eval-<n>.md` | Planner（次のイテレーション） |
+| Evaluator | `${RUN_DIR}/eval-<n>.md` | Planner（次のイテレーション） |
 
 これがEvaluatorの独立性の仕掛けである。Evaluatorは計画と差分を読み、Generatorの推論過程は読まない。
 
@@ -95,11 +106,26 @@
 
 すべての指摘は `path:line` で根拠を示す。イテレーション N で出した指摘を N+1 で黙って消すことは禁止する。新しい証拠で「修正済み」を確認するか、未解決として持ち越すかのどちらかである。
 
+## ログ（共通ログ方式）
+
+`.trinity/trinity.log` は全 run の時系列ログである。run ごとには分けず、各 run の境界はオーケストレーターが書き込むヘッダ行で見分ける。
+
+```shell
+=== 20260428T091200Z-fix-login-bug run started ===
+2026-04-28T09:12:05Z generator finished on a1b2c3d
+2026-04-28T09:14:30Z evaluator finished
+=== 20260428T091200Z-fix-login-bug run ended: PASS ===
+=== 20260429T153000Z-add-theme-toggle run started ===
+2026-04-29T15:30:48Z generator finished on 9c25f62
+```
+
+エージェント間の通信には使わない（評価ロジックの入力にはしない）。コスト監査と振り返り専用である。
+
 ## フック（settings.json）
 
 設定済みのフックは3種類ある。
 
-SessionStart は `.claude/trinity/` の存在と `.trinity.log` の用意を保証する。SubagentStop は `generator` と `evaluator` の終了時刻を `.claude/trinity/.trinity.log` に追記する。コスト監査と振り返りに使える。PostToolUse は `Edit|Write` を監視し、エージェントやコマンドのファイルを編集した際に YAML frontmatter の区切りが欠けていないかを警告する。これらのファイルが静かに壊れるのを防ぐ。
+SessionStart は `.trinity/` の存在と `trinity.log` の用意を保証する。SubagentStop は `generator` と `evaluator` の終了時刻を `.trinity/trinity.log` に追記する。PostToolUse は `Edit|Write` を監視し、エージェントやコマンドのファイルを編集した際に YAML frontmatter の区切りが欠けていないかを警告する。これらのファイルが静かに壊れるのを防ぐ。
 
 ## Generator が呼べるツール
 

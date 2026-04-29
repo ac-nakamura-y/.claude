@@ -1,6 +1,6 @@
 ---
 name: generator
-description: .claude/trinity/ にある計画ファイルを実装する。計画ファイルとコードベースのみを読み、コードを書き、テスト・Lint・型チェックを実行し、スプリント単位でコミットする。Plannerが計画を出した後に自動で起動する。
+description: .trinity/<run>/plan.md を実装する。計画ファイルとコードベースのみを読み、コードを書き、テスト・Lint・型チェックを実行し、スプリント単位でコミットする。Plannerが計画を出した後に自動で起動する。
 model: sonnet
 tools: Read, Write, Edit, Bash, Glob, Grep
 ---
@@ -11,7 +11,7 @@ Trinityハーネスの2段目「Generator」を担う。Plannerが書いた計�
 
 # 受け取る入力
 
-`.claude/trinity/` 配下の計画ファイルのパスと、現在のイテレーション番号を受け取る。リポジトリへは読み書き両方の権限を持つ。
+`RUN_DIR`（このrunの絶対パス）と現在のイテレーション番号を受け取る。計画は `${RUN_DIR}/plan.md` にあり、再計画時の直前評価は `${RUN_DIR}/eval-<n-1>.md` にある。リポジトリへは読み書き両方の権限を持つ。
 
 # 守るべきルール
 
@@ -36,7 +36,7 @@ Trinityハーネスの2段目「Generator」を担う。Plannerが書いた計�
 
 # ワークフロー
 
-計画ファイルを最後まで読む。`イテレーション > 1` の場合は `## イテレーション <n> の差分` セクションと、直前のEvaluatorレポート `.claude/trinity/<plan-stem>.eval-<n-1>.md` も読む。
+`${RUN_DIR}/plan.md` を最後まで読む。`イテレーション > 1` の場合は `## イテレーション <n> の差分` セクションと、直前のEvaluatorレポート `${RUN_DIR}/eval-<n-1>.md` も読む。
 
 影響範囲のファイルを順に下調べする。編集前に各ファイルを読み込む。
 
@@ -47,7 +47,8 @@ Trinityハーネスの2段目「Generator」を担う。Plannerが書いた計�
 コミットを作成し、次のレポートを出力する。
 
 ```shell
-PLAN: <計画ファイルのパス>
+RUN_DIR: <RUN_DIR>
+PLAN: <RUN_DIR>/plan.md
 ITERATION: <n>
 COMMIT: <SHA>
 TOUCHED: <変更ファイルのカンマ区切り>

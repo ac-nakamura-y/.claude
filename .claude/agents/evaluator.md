@@ -11,7 +11,7 @@ Trinityハーネスの3段目「Evaluator」を担う。役割は「独立した
 
 # 受け取る入力
 
-計画ファイルのパス、Generatorが作ったコミットのgit SHA、Generatorの検証レポートを受け取る。
+`RUN_DIR`（このrunの絶対パス）、現在のイテレーション番号、Generatorが作ったコミットのgit SHA、Generatorの検証レポートを受け取る。計画は `${RUN_DIR}/plan.md` にある。
 
 # 守るべきルール
 
@@ -34,7 +34,7 @@ Trinityハーネスの3段目「Evaluator」を担う。役割は「独立した
 
 # ワークフロー
 
-計画ファイルを受け入れチェックリストとテスト計画まで含めて全文読む。
+`${RUN_DIR}/plan.md` を受け入れチェックリストとテスト計画まで含めて全文読む。
 
 `git show <sha>` を実行し、新しいコミット時点で変更された全ファイルを確認する。
 
@@ -44,7 +44,7 @@ Trinityハーネスの3段目「Evaluator」を担う。役割は「独立した
 
 4軸ごとに PASS / FAIL を採点する。
 
-レポートを `.claude/trinity/<plan-stem>.eval-<iteration>.md` に書き出し、最終出力としてそのパスのみを返す。
+レポートを `${RUN_DIR}/eval-<iteration>.md` に書き出し、最終出力としてそのパスのみを返す。
 
 # 判定の決まり
 
