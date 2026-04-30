@@ -1,21 +1,152 @@
 # Trinity — Claude Code 用の3エージェント・ハーネス
 
-長時間タスク向けに、Anthropic の Planner / Generator / Evaluator パターンを Claude Code のサブエージェントで実装したハーネスである。`/trinity <要件>` で起動し、隔離された git worktree で実装してコミットし、最終 PASS で push & PR まで自動で行う。
+Anthropic の Planner / Generator / Evaluator パターンを Claude Code のサブエージェント機能で実装したハーネスである。`/trinity <要件>` で起動し、隔離された git worktree で実装してコミットし、Evaluator が PASS を返した時点で push と PR 作成まで自動で行う。
 
-## 参考資料
+## 目次
 
-設計の出典は次の2つである。
+1. [登場人物](#1-登場人物)
+2. [起動から PR までのフロー](#2-起動から-pr-までのフロー)
+3. [なぜ3エージェントに分けるのか](#3-なぜ3エージェントに分けるのか)
+4. [ディレクトリ構成](#4-ディレクトリ構成)
+5. [作業領域の隔離（worktree モデル）](#5-作業領域の隔離worktree-モデル)
+6. [エージェント間の通信契約](#6-エージェント間の通信契約)
+7. [モデル割り当て](#7-モデル割り当て)
+8. [使い方](#8-使い方)
+9. [評価軸（Evaluator）](#9-評価軸evaluator)
+10. [設定の構成（settings.json）](#10-設定の構成settingsjson)
+11. [ログ](#11-ログ)
+12. [拡張・縮退の指針](#12-拡張縮退の指針)
+13. [参考資料](#13-参考資料)
 
-- Anthropic「Harness design for long-running apps」 https://www.anthropic.com/engineering/harness-design-long-running-apps
-- Qiita「@nogataka 氏の解説記事」 https://qiita.com/nogataka/items/efe8eb9df612d2211221
+## 1. 登場人物
 
-## 3エージェントに分ける理由
+ハーネスは「ユーザーが書く5つの設定ファイル」と「ランタイムで動く5つのアクター」で構成される。
+
+| 区分 | 名前 | 実体 | 責務 |
+| --- | --- | --- | --- |
+| 設定 | `settings.json` | `.claude/settings.json` | フックと事前承認ツールの定義 |
+| 設定 | `/trinity` | `.claude/commands/trinity.md` | オーケストレーターのプロンプト |
+| 設定 | `planner.md` | `.claude/agents/planner.md` | Planner のシステムプロンプト |
+| 設定 | `generator.md` | `.claude/agents/generator.md` | Generator のシステムプロンプト |
+| 設定 | `evaluator.md` | `.claude/agents/evaluator.md` | Evaluator のシステムプロンプト |
+| アクター | UserPromptSubmit hook | shell（settings.json） | プリフライト（git 状態の検証） |
+| アクター | Orchestrator | Claude（メイン会話） | run ディレクトリと worktree の作成、各段の起動、最終化 |
+| アクター | Planner | Claude サブエージェント（opus） | 要件 → `plan.md` |
+| アクター | Generator | Claude サブエージェント（sonnet） | `plan.md` → worktree 内のコード＋コミット |
+| アクター | Evaluator | Claude サブエージェント（sonnet） | diff＋`plan.md` → `eval-N.md`、判定 |
+
+これらの関係を図にすると次のとおりである。
+
+```shell
+┌───────────────────────────────────────────────────────────────────────┐
+│ User                                                                   │
+│   /trinity [--max-iter=N] <1〜4文の要件>                                │
+└────────────────────────────────────┬──────────────────────────────────┘
+                                     ▼
+                ┌─────────────────────────────────────┐
+                │ UserPromptSubmit hook (shell)       │  settings.json
+                │  · git リポジトリ判定                │
+                │  · working tree clean を強制         │
+                │  · BASE_BRANCH を stderr に表示      │
+                └─────────────────┬───────────────────┘
+                                  ▼
+                ┌─────────────────────────────────────┐
+                │ Orchestrator (/trinity)             │  commands/trinity.md
+                │  · RUN_DIR と worktree を生成        │
+                │  · 各エージェントを直列に起動        │
+                │  · 最終 PASS で push＋PR 作成        │
+                └──┬──────────────┬──────────────┬────┘
+                   ▼              ▼              ▼
+            ┌──────────┐    ┌──────────┐   ┌──────────┐
+            │ Planner  │    │Generator │   │Evaluator │
+            │  opus    │    │  sonnet  │   │  sonnet  │
+            └────┬─────┘    └────┬─────┘   └────┬─────┘
+       plan.md ◀─┘               │              └─▶ eval-N.md
+                  commit on ◀────┘
+                  worktree
+                                  ▼
+   ┌────────────────────────────────────────────────────────────────┐
+   │ .trinity/<TS>-<slug>/                                          │
+   │  ├─ plan.md         ← Planner 出力                              │
+   │  ├─ eval-1.md ...   ← Evaluator 出力                            │
+   │  └─ worktree/       ← 隔離 git worktree                         │
+   │       branch: trinity/<TS>-<slug>  (base: BASE_BRANCH)         │
+   └────────────────────────────────────────────────────────────────┘
+                                  │
+                       PASS のときだけ
+                                  ▼
+                ┌─────────────────────────────────────┐
+                │ git push  +  create_pull_request    │
+                │   base = BASE_BRANCH                │
+                │   head = trinity/<TS>-<slug>        │
+                └─────────────────────────────────────┘
+```
+
+Orchestrator は段と段のあいだでコードを自分で読んだり編集したりしない。受け渡しは `RUN_DIR` `WORKTREE_DIR` `BRANCH` のパスとコミット SHA だけにする。各エージェントが成果物（ファイル）から動くという原則がハーネスの本質である。
+
+## 2. 起動から PR までのフロー
+
+時系列で何が起きるかを示す。番号は図と本文で対応する。
+
+```shell
+  ① /trinity <要件>
+        │
+        ▼
+  ② UserPromptSubmit hook
+        ・git repo? clean? → BASE_BRANCH 確定
+        │
+        ▼
+  ③ Orchestrator: run ディレクトリと worktree の生成
+        ・RUN_DIR     = .trinity/<TS>-<slug>/
+        ・BRANCH      = trinity/<TS>-<slug>     (base: BASE_BRANCH)
+        ・WORKTREE_DIR = RUN_DIR/worktree/
+        │
+        ▼
+  ④ ループ n = 1 .. MAX_ITER ────────────────────────────────────┐
+        │                                                          │
+        │  ④-a Planner   →  RUN_DIR/plan.md を書く（再計画時は上書き）│
+        │  ④-b Generator →  WORKTREE_DIR でコードを書き 1 コミット    │
+        │  ④-c Evaluator →  RUN_DIR/eval-<n>.md を書き判定を返す      │
+        │                                                          │
+        │       判定 ─── PASS ────────────────────▶ ループ脱出 → ⑤ │
+        │       判定 ─── NEEDS_REVISION / FAIL ──▶ n を進めて続行 ─┘
+        │
+        │ n == MAX_ITER で PASS なし → ⑤ をスキップして報告のみ
+        ▼
+  ⑤ 最終化（PASS のときだけ）
+        ・git -C "$WORKTREE_DIR" push -u origin "$BRANCH"
+        ・mcp__github__create_pull_request
+            base = BASE_BRANCH, head = BRANCH
+            タイトル＝plan.md の H1
+            本文＝plan.md の目的・受け入れ基準＋eval-<n>.md の判定
+        │
+        ▼
+  ⑥ ユーザーへの最終出力
+        Trinity result / RunDir / Branch / Plan / Commit / Eval / Iters / PR
+```
+
+各ステップの責務は次のとおりである。
+
+| # | アクター | 入力 | 出力 |
+| --- | --- | --- | --- |
+| ① | User | — | スラッシュコマンド `/trinity ...` |
+| ② | UserPromptSubmit hook | カレント git 状態 | プロンプト通過／exit 2 でブロック |
+| ③ | Orchestrator | `BASE_BRANCH` | `RUN_DIR`, `WORKTREE_DIR`, `BRANCH` |
+| ④-a | Planner | 要件、必要なら直前 `eval-<n-1>.md` | `${RUN_DIR}/plan.md` |
+| ④-b | Generator | `plan.md`、必要なら直前 `eval-<n-1>.md` | worktree 内の 1 コミット（SHA） |
+| ④-c | Evaluator | `plan.md`、コミット SHA、Generator の検証レポート | `${RUN_DIR}/eval-<n>.md`、判定 |
+| ⑤ | Orchestrator | PASS 時のみ | push 済みブランチ、PR URL |
+| ⑥ | Orchestrator | — | 整形された結果サマリ |
+
+## 3. なぜ3エージェントに分けるのか
 
 1つのエージェントで計画・実装・評価をまとめてやると、コンテキストが膨らむほどドリフトが起きる。実装の途中で計画が書き換わり、評価者が自分の作品を甘く見て、探索のトークンが実装のトークンを圧迫する。役割を3つのサブエージェントに分け、それぞれに固有のシステムプロンプトと新鮮なコンテキストを与えることで、各段の集中を保ち、評価者の独立した懐疑性を担保する。
 
-## ファイル構成
+Evaluator の独立性は、ファイルベースの通信によって構造的に強制される。Evaluator は計画ファイルと git diff を読み、Generator のチャットコンテキストや内部推論は読まない。これによって「自分の書いたコードに甘くなる」という単一エージェントの典型的な失敗モードが、設計上発生し得なくなる。
 
-エージェント定義とコマンドはリポジトリの `.claude/` 以下に、ランタイム成果物はプロジェクト直下の `.trinity/` 以下に置く。
+## 4. ディレクトリ構成
+
+エージェント定義とコマンドは `.claude/` 以下に、ランタイム成果物は `.trinity/` 以下に置く。前者はリポジトリにコミットし、後者は `.gitignore` で除外する（プレースホルダの空ディレクトリだけ追跡する）。
 
 ```shell
 .claude/
@@ -25,14 +156,14 @@
 │   └── evaluator.md    # sonnet · diff＋plan.md → eval-N.md
 ├── commands/
 │   └── trinity.md      # /trinity オーケストレーター
-└── settings.json       # フックと許可リスト
+└── settings.json       # フックと事前承認ツール
 
-.trinity/                                   # /trinity 起動時に生成
+.trinity/                                   # 起動時に hook が用意
 ├── trinity.log                             # 全 run 共通の時系列ログ
-├── 20260429T153000Z-add-theme-toggle/      # run ディレクトリ（UTC基本形式 + slug）
-│   ├── plan.md                             # Planner 出力
-│   ├── eval-1.md                           # Evaluator 出力（イテレーション1）
-│   ├── eval-2.md                           # 〃 （イテレーション2）
+├── 20260429T153000Z-add-theme-toggle/      # run ディレクトリ
+│   ├── plan.md                             # Planner 出力（イテレーション間で上書き）
+│   ├── eval-1.md                           # Evaluator 出力（イテレーション 1）
+│   ├── eval-2.md                           # 〃 （イテレーション 2）
 │   └── worktree/                           # git worktree（branch: trinity/<TS>-<slug>）
 └── 20260428T091200Z-fix-login-bug/
     ├── plan.md
@@ -40,25 +171,43 @@
     └── worktree/
 ```
 
-run ディレクトリ名は UTC 基本形式のタイムスタンプと、要件から派生した英字 kebab-case の slug を `-` で連結する。コロンを含まないので Windows でも安全に扱える。
+run ディレクトリ名は UTC 基本形式のタイムスタンプ（`YYYYMMDDTHHMMSSZ`）と、要件から派生した英字 kebab-case の slug を `-` で連結する。コロンを含まないので Windows でも安全に扱える。同一秒で衝突した場合は slug 末尾に `-2` `-3` などを付ける。
 
-`worktree/` は `git worktree add -b trinity/<TS>-<slug> <path> <BASE_BRANCH>` で作られた独立チェックアウトである。Generator はここでだけ編集とコミットを行うため、ユーザーの本来のチェックアウトは一切汚れない。複数の `/trinity` を並行で動かしても、お互いに踏み合わない。
+## 5. 作業領域の隔離（worktree モデル）
 
-## ファイルベースで通信する
+`/trinity` は起動時のブランチを `BASE_BRANCH` として記録し、それ以降このブランチには一切手を触れない。代わりに `BASE_BRANCH` から派生した新しいブランチ `trinity/<TS>-<slug>` を、別ディレクトリ `.trinity/<run>/worktree/` に git worktree として展開する。Generator はその中だけで読み書きとコミットを行う。
 
-サブエージェントは互いのチャットコンテキストを見ない。ファイルを介して受け渡しを行う。オーケストレーターは `RUN_DIR` と `WORKTREE_DIR`（必要に応じて `BRANCH`）の絶対パスだけを各段に渡す。
+```shell
+# 起動時に hook が確認した状態
+BASE_BRANCH = main             ← ユーザーがいたブランチ。clean。
 
-| 出力者 | ファイル | 入力者 |
+# Orchestrator が作る隔離環境
+trinity/20260429T153000Z-add-theme-toggle  ← 新規ブランチ
+  └─ checked out at  .trinity/20260429T153000Z-add-theme-toggle/worktree/
+```
+
+これがもたらす性質は次のとおりである。
+
+- ユーザーの本来のチェックアウトは一切汚れない。Trinity 実行中も別の作業を続けられる。
+- 複数の `/trinity` を並行で動かしてもお互いに踏み合わない。各 run は独立した worktree を持つ。
+- worktree は監査ログとして残す。`/trinity` は後始末しない。不要になったらユーザーが `git worktree remove .trinity/<run>/worktree` で消す。
+- 最終 PASS 後に push する対象は `trinity/<TS>-<slug>` ブランチであり、PR の base は `BASE_BRANCH` になる。
+
+## 6. エージェント間の通信契約
+
+サブエージェントは互いのチャットコンテキストを見ない。ファイルを介して受け渡しを行う。Orchestrator は絶対パスだけを各段に渡す。
+
+| 出力者 | ファイル / 成果物 | 読む側 |
 | --- | --- | --- |
 | Planner | `${RUN_DIR}/plan.md` | Generator、Evaluator |
-| Generator | `${WORKTREE_DIR}` 内の git コミット1つ（SHAをオーケストレーターが渡す） | Evaluator |
-| Evaluator | `${RUN_DIR}/eval-<n>.md` | Planner（次のイテレーション） |
+| Generator | `${WORKTREE_DIR}` 内の 1 コミット（SHA） | Evaluator |
+| Evaluator | `${RUN_DIR}/eval-<n>.md` | Planner（次イテレーション）、Orchestrator（最終化時） |
 
-これがEvaluatorの独立性の仕掛けである。Evaluatorは計画と差分を読み、Generatorの推論過程は読まない。
+引用ルールはハーネス全体で一貫させる。`plan.md` `eval-N.md` の中で示す `path:line` は **`WORKTREE_DIR` 起点の相対パス** で書く。Generator/Evaluator は同じ worktree を起点に読むためズレない。PR 本文に貼ったときもレビュアーがリポジトリ相対で読める。
 
-## モデルの割り当て（記事推奨）
+## 7. モデル割り当て
 
-軸となる配分は次のとおりである。
+軸となる配分は次のとおりである。各エージェントの frontmatter にある `model:` で個別に上書きできる。
 
 | エージェント | モデル | 理由 |
 | --- | --- | --- |
@@ -66,9 +215,7 @@ run ディレクトリ名は UTC 基本形式のタイムスタンプと、要�
 | Generator | sonnet | 仕様が明確な大量作業向き。コスト効率が良い |
 | Evaluator | sonnet | 独立した懐疑性は Opus を要さない。Sonnet で十分かつ低コスト |
 
-各エージェントの frontmatter にある `model:` で個別に上書きできる。
-
-## 使い方
+## 8. 使い方
 
 代表的な呼び出しは次のとおりである。
 
@@ -79,82 +226,82 @@ run ディレクトリ名は UTC 基本形式のタイムスタンプと、要�
 
 `MAX_ITER` の既定値は 15 である。短いタスクで素早く回したいときは `--max-iter=3` のように下げる。長時間で品質を追い込みたいタスクほど既定値が活きる構成になっている。
 
-### プリフライトの契約
+`/trinity` を起動した時点で、ユーザーはパイプライン全体（worktree 作成、ブランチ push、PR 作成）への明示的な許可を出したものとして扱う。途中で確認プロンプトは出さない。NEEDS_REVISION / FAIL のまま `MAX_ITER` に達した場合は、push と PR 作成は行わず、最新の評価レポートのパスを表示して停止する。黙って延々と繰り返さない。
 
-`UserPromptSubmit` フックが `/trinity` を検出した時点で次を強制する。これらは Claude ではなくハーネスが実行するので、起動した瞬間に契約が満たされていることが保証される。
-
-- カレントが git リポジトリであること
-- ワーキングツリーが clean であること（汚れていれば prompt がブロックされる）
-- 現在のブランチを stderr に表示する（情報提示のみ、ブロックはしない）
-
-ユーザーの起動時のブランチは `BASE_BRANCH` として保存される。ハーネスはこのブランチを直接いじらない。代わりに、起動ごとに `trinity/<TS>-<slug>` ブランチを `BASE_BRANCH` から切り、`.trinity/<run>/worktree/` に worktree として展開して、Generator はその中だけで作業する。最終 PASS 後、ハーネスはこのブランチを push して `BASE_BRANCH` を base とする PR を自動作成する。
-
-### 実行ループ
-
-ループの全体像は次のとおりである。
-
-```shell
-            ┌─────────────────────────────────────────────┐
-            ▼                                             │
-  Planner ──▶ plan.md ──▶ Generator ──▶ worktree commit ──▶ Evaluator
-                                                          │
-                                                  PASS ───┘── push ＋ PR 作成 → exit
-                                                  NEEDS_REVISION / FAIL
-                                                          │
-                                                          └──▶ next iter
-```
-
-判定が PASS になれば worktree のブランチを push して PR を作成し、ループを抜ける。`MAX_ITER` に到達しても PASS にならない場合は push と PR 作成は行わず、最新の評価レポートのパスを表示して停止する。黙って延々と繰り返さない。
-
-## 評価軸（Evaluator）
+## 9. 評価軸（Evaluator）
 
 記事準拠の4軸を二値で採点する。
 
-機能性は、コードが計画どおりに動くかを問う。コード品質は、可読性・既存パターンとの整合・不当な `any` の不使用を問う。ビジュアル設計は、UIの忠実度とアクセシビリティを問い、UI変更がない場合はN/Aとする。製品としての厚みは、エッジケース、空・エラー・ローディング状態、計画で指摘された競合状態を問う。
+- **機能性**：コードが計画どおりに動くか
+- **コード品質**：可読性、既存パターンとの整合、不当な `any` の不使用
+- **ビジュアル設計**：UI の忠実度とアクセシビリティ。UI 変更がない場合は N/A
+- **製品としての厚み**：エッジケース、空・エラー・ローディング状態、計画で指摘された競合状態
 
 すべての指摘は `path:line` で根拠を示す。イテレーション N で出した指摘を N+1 で黙って消すことは禁止する。新しい証拠で「修正済み」を確認するか、未解決として持ち越すかのどちらかである。
 
-## ログ（共通ログ方式）
+判定は3値で出る。
 
-`.trinity/trinity.log` は全 run の時系列ログである。run ごとには分けず、各 run の境界はオーケストレーターが書き込むヘッダ行で見分ける。
+- **PASS**：全受け入れ基準と全軸が PASS
+- **NEEDS_REVISION**：FAIL があるが計画は正しく、Generator が直せる範囲
+- **FAIL**：計画自体が誤っており、再計画が必要
+
+## 10. 設定の構成（settings.json）
+
+`settings.json` には4種類のフックと事前承認ツールリストが入っている。ハーネスはこの設定で振る舞いの大半を強制している。
+
+### フック
+
+| フック | タイミング | 役割 |
+| --- | --- | --- |
+| `SessionStart` | セッション開始時 | `.trinity/` の存在と `trinity.log` の用意 |
+| `UserPromptSubmit` | プロンプト送信前 | `/trinity` を検出したら git repo＋clean を強制（ダメなら exit 2） |
+| `SubagentStop` | サブエージェント終了時 | `generator` `evaluator` の終了時刻を `trinity.log` に追記 |
+| `PostToolUse` | `Edit`/`Write` 後 | 編集対象がエージェント／コマンド定義なら、YAML frontmatter の欠損を警告 |
+
+`UserPromptSubmit` がプリフライトの責務を持つことが重要である。これは Claude ではなくハーネスが実行するので、`/trinity` が起動した瞬間に「git リポジトリ内かつ working tree が clean」が保証される。プロンプト側で再実装する必要はない。
+
+### 事前承認ツール
+
+`permissions.allow` には次が入っている。
+
+- 読み取り専用 git：`status` `log` `diff` `show` `rev-parse`
+- worktree 操作：`git worktree`、`git -C <path> ...`
+- 型チェック：`tsc --noEmit`、`mypy`
+- Lint：`eslint`、`ruff`
+- テスト：`vitest run`、`jest`、`pytest`
+
+UI スモークの Playwright MCP は別途設定する。それ以外は実行時にプロンプトが出る。これは意図的である。破壊的なコマンドや珍しいコマンドは明示的な承認を必要とすべきだからである。
+
+## 11. ログ
+
+`.trinity/trinity.log` は全 run の時系列ログである。run ごとには分けず、各 run の境界は Orchestrator が書き込むヘッダ行で見分ける。
 
 ```shell
-=== 20260428T091200Z-fix-login-bug run started ===
+=== 20260428T091200Z-fix-login-bug run started on trinity/20260428T091200Z-fix-login-bug (base=main) ===
 2026-04-28T09:12:05Z generator finished on a1b2c3d
 2026-04-28T09:14:30Z evaluator finished
-=== 20260428T091200Z-fix-login-bug run ended: PASS ===
-=== 20260429T153000Z-add-theme-toggle run started ===
+=== 20260428T091200Z-fix-login-bug run ended: PASS at iter 1 ===
+=== 20260429T153000Z-add-theme-toggle run started on trinity/20260429T153000Z-add-theme-toggle (base=feat/x) ===
 2026-04-29T15:30:48Z generator finished on 9c25f62
 ```
 
 エージェント間の通信には使わない（評価ロジックの入力にはしない）。コスト監査と振り返り専用である。
 
-## フック（settings.json）
+## 12. 拡張・縮退の指針
 
-設定済みのフックは4種類ある。
+ハーネスの各部品は「モデル単独でできないこと」についての仮定を表している。モデルが進化するにつれて不要になった部品は積極的に削るべきである。
 
-SessionStart は `.trinity/` の存在と `trinity.log` の用意を保証する。UserPromptSubmit は `/trinity` で始まる prompt を検出すると、git リポジトリかつ working tree が clean であることを強制し、満たさなければ exit 2 で prompt 投入をブロックする。クリーンならカレントブランチ名を stderr に出して通過させる。SubagentStop は `generator` と `evaluator` の終了時刻を `.trinity/trinity.log` に追記する。PostToolUse は `Edit|Write` を監視し、エージェントやコマンドのファイルを編集した際に YAML frontmatter の区切りが欠けていないかを警告する。これらのファイルが静かに壊れるのを防ぐ。
+**縮退のシグナル**
 
-## Generator が呼べるツール
+- Planner の計画が連続して無修正で通り、Generator からの確認も発生しない → 小タスクでは Planner を抜き、Generator が直接ユーザー要件から動かす
+- Evaluator がイテレーション 1 で 90% 以上 PASS を返す → 評価軸が緩いか、Evaluator のコストが見合わない
+- イテレーション 2 以降で判定が変わらない → `MAX_ITER` の既定値を下げる
 
-事前承認された許可リストには、読み取り専用の git（`status`、`log`、`diff`、`show`、`rev-parse`）、worktree 操作（`git worktree`、`git -C <path> ...`）、型チェック（`tsc --noEmit`、`mypy`）、Lint（`eslint`、`ruff`）、テスト（`vitest run`、`jest`、`pytest`）が含まれている。UIスモークの Playwright MCP は別途設定する。
+**拡張の判断**
 
-それ以外は実行時にプロンプトが出る。これは意図的である。破壊的なコマンドや珍しいコマンドは明示的な承認を必要とすべきだからである。
+4つ目のエージェント（Planner の前に Researcher、Evaluator の後に Refiner）を足すのは、欠けている能力がボトルネックだと示す証拠が手に入ってからにする。先回りで足すべきものではない。
 
-## PR の自動作成
+## 13. 参考資料
 
-最終イテレーションで Evaluator が PASS を返したとき、オーケストレーターは次を行う。
-
-1. `git -C "$WORKTREE_DIR" push -u origin "$BRANCH"` で `trinity/<TS>-<slug>` ブランチを origin に push する。ネットワーク要因の失敗は exponential backoff（2s, 4s, 8s, 16s）で最大4回まで再試行する。
-2. GitHub MCP の `mcp__github__create_pull_request` で PR を作成する。base は `BASE_BRANCH`、head は `BRANCH` である。
-3. PR タイトルは `plan.md` の H1 を使う。本文には plan.md の「目的」と「受け入れ基準」、最終 Evaluator レポートの「判定」セクションをそのまま埋め込む。`.trinity/` は gitignore されているためレビュアーから見えず、PR 本文に核心を載せておく必要がある。
-
-`/trinity` を起動した時点でユーザーはパイプライン全体（push と PR 作成を含む）への明示的な許可を出したものとして扱う。途中での確認プロンプトは出さない。NEEDS_REVISION / FAIL で `MAX_ITER` に達した場合は push も PR 作成もしない。
-
-## ハーネスを増やすか減らすかの判断
-
-記事の主張の核は次の点である。ハーネスの各部品は、モデル単独でできないことについての仮定を表している。モデルが進化するにつれ、不要になった部品は積極的に削るべきである。
-
-具体的な削減シグナルとしては、Plannerの計画が連続して無修正で通り、Generatorからの確認も発生しなくなったら、小さなタスクではPlannerを抜いてGeneratorが直接ユーザー要件から動くことを検討する。Evaluator がイテレーション1で90%以上 PASS を返すようになったら、評価軸が緩いか、Evaluator自体が定常作業ではコストに見合わなくなっている。イテレーション2以降で判定が変わらないなら、`MAX_ITER` の既定値を下げる。
-
-逆に4つ目のエージェント（Plannerの前に Researcher、Evaluatorの後に Refiner）を足すのは、欠けている能力がボトルネックだと示す証拠が手に入ってからにする。先回りで足すべきものではない。
+- Anthropic「Harness design for long-running apps」 https://www.anthropic.com/engineering/harness-design-long-running-apps
+- Qiita「@nogataka 氏の解説記事」 https://qiita.com/nogataka/items/efe8eb9df612d2211221
