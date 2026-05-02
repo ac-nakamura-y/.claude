@@ -1,11 +1,11 @@
 ---
-description: Planner → Generator → Evaluator のハーネスパイプラインを実行する。使用例 `/trinity <要件>` または `/trinity --max-iter=5 <要件>`。
-argument-hint: [--max-iter=N] <1〜4文の要件>
+description: Planner → Generator → Evaluator のハーネスパイプラインを実行する。使用例 `/trinity <要件メモ>` または `/trinity --max-iter=5 <要件メモ>`。
+argument-hint: [--max-iter=N] <要件メモ（任意・長さ不問）>
 ---
 
 # /trinity — 3エージェント・ハーネスパイプライン
 
-ハーネスを取り回すスラッシュコマンドである。Plannerが要件を計画に展開し、Generatorが隔離された worktree で実装してコミットし、Evaluatorが独立に判定する。判定が PASS になるか、`max_iter` に到達するまで繰り返す。最終 PASS 後、worktree のブランチを push して PR を作成する。
+ハーネスを取り回すスラッシュコマンドである。起動時にユーザーへヒアリングを行い、Plannerが要件を計画に展開し、Generatorが隔離された worktree で実装してコミットし、Evaluatorが独立に判定する。判定が PASS になるか、`max_iter` に到達するまで繰り返す。最終 PASS 後、worktree のブランチを push して PR を作成する。
 
 ## 引数
 
@@ -13,7 +13,22 @@ argument-hint: [--max-iter=N] <1〜4文の要件>
 
 `$ARGUMENTS` の先頭が `--max-iter=N`（N は正の整数）であれば、`MAX_ITER = N` とし、そのトークンを取り除く。先頭が一致しない場合は `MAX_ITER = 15`（既定値）を使う。
 
-残りを「要件」として扱う。要件が空ならユーザーに1〜4文の要件を求めて停止する。先には進めない。
+残りを「要件メモ」として扱う。長さは問わない。空でも可。短い1行メモでも、長文の仕様書でも、そのまま次のヒアリング段に渡す。
+
+## 起動時ヒアリング（AskUserQuestion）
+
+run ディレクトリを切る前に、Claude の `AskUserQuestion` ツールで要件を詳しく聞き取る。要件メモが空でも、長文でも、必ず実施する（長文の場合は曖昧さの残る点だけを絞り込む）。質問はフリーテキストで投げず、必ず `AskUserQuestion` を使う。これを再実装したり、自前で対話プロンプトを書いたりしない。
+
+呼び出し方は次のとおり。
+
+- 1回の呼び出しに1〜4問をまとめて入れる。複数回に分けない。
+- 各問は2〜4個の互いに排他的な選択肢を持つ。`AskUserQuestion` が自動で「Other」（自由入力）を付ける。
+- 安全側・標準的な選択肢には末尾に `(Recommended)` を付け、リストの先頭に置く。
+- 質問の典型例：スコープの粒度、UI の有無と形式、互換性の扱い、既存パターンの選択、テストの厚み。
+
+要件メモを読んだ時点で一意に解釈できる項目は質問しない。確認のための確認は禁止する。
+
+ヒアリングの回答とユーザーが投入した要件メモを統合した「確定要件」を作り、これを Planner に渡す。確定要件は記憶ではなくテキストとして保持し、次節で生成する `RUN_DIR` 直下に `${RUN_DIR}/intake.md` として書き出す。Planner はこのファイルを読む。
 
 ## プリフライト（hook 担当）
 
@@ -31,7 +46,7 @@ BASE_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 ## run ディレクトリと worktree の作成
 
-要件からスラッグを生成し、run ディレクトリと隔離 worktree を作る。スラッグは2〜5語の英字 kebab-case にする（例: 「ユーザー設定ページにテーマトグルを追加する」→ `add-theme-toggle`）。
+確定要件からスラッグを生成し、run ディレクトリと隔離 worktree を作る。スラッグは2〜5語の英字 kebab-case にする（例: 「ユーザー設定ページにテーマトグルを追加する」→ `add-theme-toggle`）。`${RUN_DIR}/intake.md` には、上記ヒアリングで確定した要件本文をそのまま書き出す。
 
 ```shell
 TS=$(date -u +%Y%m%dT%H%M%SZ)
@@ -54,13 +69,13 @@ printf '=== %s run started on %s (base=%s) ===\n' "${TS}-${SLUG}" "${BRANCH}" "$
 
 `planner` サブエージェントを次の入力で起動する。
 
-- 要件（原文ママ）
+- `INTAKE: ${RUN_DIR}/intake.md`（確定要件。原文ママを保持）
 - `Iteration: <n>`
 - `RUN_DIR: <絶対パス>`
 - `WORKTREE_DIR: <絶対パス>`（実装対象のコードはこの中にある）
 - `n > 1` の場合は、直前の評価レポートが `${RUN_DIR}/eval-<n-1>.md` にある旨を伝える
 
-返却された計画ファイルパス（必ず `${RUN_DIR}/plan.md`）を保持する。Plannerが確認のための質問をユーザーに投げた場合は、その内容をユーザーに見せて停止する。
+要件は要約せずに `intake.md` を Planner に直接読ませる。返却された計画ファイルパス（必ず `${RUN_DIR}/plan.md`）を保持する。Planner が `AskUserQuestion` でユーザーに追加確認を投げた場合は、その内容をユーザーに見せて停止する（Planner は他の対話手段を使ってはならない）。
 
 ### Generator
 
