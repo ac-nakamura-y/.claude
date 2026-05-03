@@ -1,6 +1,6 @@
 # Trinity — Claude Code 用の3エージェント・ハーネス
 
-Anthropic の Planner / Generator / Evaluator パターンを Claude Code のサブエージェント機能で実装したハーネスである。`/trinity <要件>` で起動し、隔離された git worktree で実装してコミットし、Evaluator が PASS を返した時点で push と PR 作成まで自動で行う。
+Anthropic の Planner / Generator / Evaluator パターンを Claude Code のサブエージェント機能で実装したハーネスである。`/trinity:run <要件>` で起動し、隔離された git worktree で実装してコミットし、Evaluator が PASS を返した時点で push と PR 作成まで自動で行う。
 
 ## 目次
 
@@ -24,12 +24,14 @@ Anthropic の Planner / Generator / Evaluator パターンを Claude Code のサ
 
 | 区分 | 名前 | 実体 | 責務 |
 | --- | --- | --- | --- |
-| 設定 | `settings.json` | `.claude/settings.json` | フックと事前承認ツールの定義 |
-| 設定 | `/trinity` | `.claude/commands/trinity.md` | オーケストレーターのプロンプト |
-| 設定 | `planner.md` | `.claude/agents/planner.md` | Planner のシステムプロンプト |
-| 設定 | `generator.md` | `.claude/agents/generator.md` | Generator のシステムプロンプト |
-| 設定 | `evaluator.md` | `.claude/agents/evaluator.md` | Evaluator のシステムプロンプト |
-| アクター | UserPromptSubmit hook | shell（settings.json） | プリフライト（git 状態の検証） |
+| 設定 | `plugin.json` | `plugins/trinity/.claude-plugin/plugin.json` | プラグイン名・バージョンの宣言 |
+| 設定 | `settings.json` | `plugins/trinity/settings.json` | trinity 固有の事前承認ツール |
+| 設定 | `hooks.json` | `plugins/trinity/hooks/hooks.json` | SessionStart / UserPromptSubmit / SubagentStop |
+| 設定 | `/trinity:run` | `plugins/trinity/commands/run.md` | オーケストレーターのプロンプト |
+| 設定 | `trinity:planner` | `plugins/trinity/agents/planner.md` | Planner のシステムプロンプト |
+| 設定 | `trinity:generator` | `plugins/trinity/agents/generator.md` | Generator のシステムプロンプト |
+| 設定 | `trinity:evaluator` | `plugins/trinity/agents/evaluator.md` | Evaluator のシステムプロンプト |
+| アクター | UserPromptSubmit hook | shell（hooks.json） | プリフライト（git 状態の検証） |
 | アクター | Orchestrator | Claude（メイン会話） | run ディレクトリと worktree の作成、各段の起動、最終化 |
 | アクター | Planner | Claude サブエージェント（opus） | 要件 → `plan.md` |
 | アクター | Generator | Claude サブエージェント（sonnet） | `plan.md` → worktree 内のコード＋コミット |
@@ -40,7 +42,7 @@ Anthropic の Planner / Generator / Evaluator パターンを Claude Code のサ
 ```shell
 ┌───────────────────────────────────────────────────────────────────────┐
 │ User                                                                   │
-│   /trinity [--max-iter=N] <1〜4文の要件>                                │
+│   /trinity:run [--max-iter=N] <1〜4文の要件>                                │
 └────────────────────────────────────┬──────────────────────────────────┘
                                      ▼
                 ┌─────────────────────────────────────┐
@@ -51,7 +53,7 @@ Anthropic の Planner / Generator / Evaluator パターンを Claude Code のサ
                 └─────────────────┬───────────────────┘
                                   ▼
                 ┌─────────────────────────────────────┐
-                │ Orchestrator (/trinity)             │  commands/trinity.md
+                │ Orchestrator (/trinity:run)             │  commands/trinity.md
                 │  · RUN_DIR と worktree を生成        │
                 │  · 各エージェントを直列に起動        │
                 │  · 最終 PASS で push＋PR 作成        │
@@ -89,7 +91,7 @@ Orchestrator は段と段のあいだでコードを自分で読んだり編集�
 時系列で何が起きるかを示す。番号は図と本文で対応する。
 
 ```shell
-  ① /trinity <要件>
+  ① /trinity:run <要件>
         │
         ▼
   ② UserPromptSubmit hook
@@ -129,7 +131,7 @@ Orchestrator は段と段のあいだでコードを自分で読んだり編集�
 
 | # | アクター | 入力 | 出力 |
 | --- | --- | --- | --- |
-| ① | User | — | スラッシュコマンド `/trinity ...` |
+| ① | User | — | スラッシュコマンド `/trinity:run ...` |
 | ② | UserPromptSubmit hook | カレント git 状態 | プロンプト通過／exit 2 でブロック |
 | ③ | Orchestrator | `BASE_BRANCH` | `RUN_DIR`, `WORKTREE_DIR`, `BRANCH` |
 | ④-a | Planner | 要件、必要なら直前 `eval-<n-1>.md` | `${RUN_DIR}/plan.md` |
@@ -146,19 +148,24 @@ Evaluator の独立性は、ファイルベースの通信によって構造的�
 
 ## 4. ディレクトリ構成
 
-エージェント定義とコマンドは `.claude/` 以下に、ランタイム成果物は `.trinity/` 以下に置く。前者はリポジトリにコミットし、後者は `.gitignore` で除外する（プレースホルダの空ディレクトリだけ追跡する）。
+エージェント定義とコマンドは `plugins/trinity/` プラグイン内に、ランタイム成果物は実行プロジェクトの `.trinity/` 以下に置く。前者はリポジトリにコミットし、後者は `.gitignore` で除外する。
 
 ```shell
-.claude/
+plugins/trinity/
+├── .claude-plugin/
+│   └── plugin.json     # プラグイン宣言（name, version, author）
 ├── agents/
 │   ├── planner.md      # opus  · 要件 → plan.md
 │   ├── generator.md    # sonnet · plan.md → worktree 内のコード＋コミット
 │   └── evaluator.md    # sonnet · diff＋plan.md → eval-N.md
 ├── commands/
-│   └── trinity.md      # /trinity オーケストレーター
-└── settings.json       # フックと事前承認ツール
+│   └── run.md          # /trinity:run オーケストレーター
+├── hooks/
+│   └── hooks.json      # SessionStart / UserPromptSubmit / SubagentStop
+├── settings.json       # trinity 固有の事前承認ツール
+└── README.md           # 本ファイル
 
-.trinity/                                   # 起動時に hook が用意
+.trinity/                                   # 実行プロジェクト直下、SessionStart で hook が用意
 ├── trinity.log                             # 全 run 共通の時系列ログ
 ├── 20260429T153000Z-add-theme-toggle/      # run ディレクトリ
 │   ├── plan.md                             # Planner 出力（イテレーション間で上書き）
@@ -175,7 +182,7 @@ run ディレクトリ名は UTC 基本形式のタイムスタンプ（`YYYYMMD
 
 ## 5. 作業領域の隔離（worktree モデル）
 
-`/trinity` は起動時のブランチを `BASE_BRANCH` として記録し、それ以降このブランチには一切手を触れない。代わりに `BASE_BRANCH` から派生した新しいブランチ `trinity/<TS>-<slug>` を、別ディレクトリ `.trinity/<run>/worktree/` に git worktree として展開する。Generator はその中だけで読み書きとコミットを行う。
+`/trinity:run` は起動時のブランチを `BASE_BRANCH` として記録し、それ以降このブランチには一切手を触れない。代わりに `BASE_BRANCH` から派生した新しいブランチ `trinity/<TS>-<slug>` を、別ディレクトリ `.trinity/<run>/worktree/` に git worktree として展開する。Generator はその中だけで読み書きとコミットを行う。
 
 ```shell
 # 起動時に hook が確認した状態
@@ -189,8 +196,8 @@ trinity/20260429T153000Z-add-theme-toggle  ← 新規ブランチ
 これがもたらす性質は次のとおりである。
 
 - ユーザーの本来のチェックアウトは一切汚れない。Trinity 実行中も別の作業を続けられる。
-- 複数の `/trinity` を並行で動かしてもお互いに踏み合わない。各 run は独立した worktree を持つ。
-- worktree は監査ログとして残す。`/trinity` は後始末しない。不要になったらユーザーが `git worktree remove .trinity/<run>/worktree` で消す。
+- 複数の `/trinity:run` を並行で動かしてもお互いに踏み合わない。各 run は独立した worktree を持つ。
+- worktree は監査ログとして残す。`/trinity:run` は後始末しない。不要になったらユーザーが `git worktree remove .trinity/<run>/worktree` で消す。
 - 最終 PASS 後に push する対象は `trinity/<TS>-<slug>` ブランチであり、PR の base は `BASE_BRANCH` になる。
 
 ## 6. エージェント間の通信契約
@@ -220,13 +227,13 @@ trinity/20260429T153000Z-add-theme-toggle  ← 新規ブランチ
 代表的な呼び出しは次のとおりである。
 
 ```shell
-/trinity ユーザー設定ページにテーマトグルを追加する。
-/trinity --max-iter=5 認証モジュールを JWT からセッションCookie に移行する。
+/trinity:run ユーザー設定ページにテーマトグルを追加する。
+/trinity:run --max-iter=5 認証モジュールを JWT からセッションCookie に移行する。
 ```
 
 `MAX_ITER` の既定値は 15 である。短いタスクで素早く回したいときは `--max-iter=3` のように下げる。長時間で品質を追い込みたいタスクほど既定値が活きる構成になっている。
 
-`/trinity` を起動した時点で、ユーザーはパイプライン全体（worktree 作成、ブランチ push、PR 作成）への明示的な許可を出したものとして扱う。途中で確認プロンプトは出さない。NEEDS_REVISION / FAIL のまま `MAX_ITER` に達した場合は、push と PR 作成は行わず、最新の評価レポートのパスを表示して停止する。黙って延々と繰り返さない。
+`/trinity:run` を起動した時点で、ユーザーはパイプライン全体（worktree 作成、ブランチ push、PR 作成）への明示的な許可を出したものとして扱う。途中で確認プロンプトは出さない。NEEDS_REVISION / FAIL のまま `MAX_ITER` に達した場合は、push と PR 作成は行わず、最新の評価レポートのパスを表示して停止する。黙って延々と繰り返さない。
 
 ## 9. 評価軸（Evaluator）
 
@@ -245,30 +252,30 @@ trinity/20260429T153000Z-add-theme-toggle  ← 新規ブランチ
 - **NEEDS_REVISION**：FAIL があるが計画は正しく、Generator が直せる範囲
 - **FAIL**：計画自体が誤っており、再計画が必要
 
-## 10. 設定の構成（settings.json）
+## 10. 設定の構成（hooks.json と settings.json）
 
-`settings.json` には4種類のフックと事前承認ツールリストが入っている。ハーネスはこの設定で振る舞いの大半を強制している。
+trinity 固有のフックと事前承認ツールはプラグイン配下に閉じている。汎用の dev ツール権限は親リポジトリ（`~/.claude/`）の `settings.json` に置く。
 
-### フック
+### フック（`plugins/trinity/hooks/hooks.json`）
 
 | フック | タイミング | 役割 |
 | --- | --- | --- |
 | `SessionStart` | セッション開始時 | `.trinity/` の存在と `trinity.log` の用意 |
-| `UserPromptSubmit` | プロンプト送信前 | `/trinity` を検出したら git repo＋clean を強制（ダメなら exit 2） |
-| `SubagentStop` | サブエージェント終了時 | `generator` `evaluator` の終了時刻を `trinity.log` に追記 |
-| `PostToolUse` | `Edit`/`Write` 後 | 編集対象がエージェント／コマンド定義なら、YAML frontmatter の欠損を警告 |
+| `UserPromptSubmit` | プロンプト送信前 | `/trinity:run` を検出したら git repo＋clean を強制（ダメなら exit 2） |
+| `SubagentStop` | サブエージェント終了時 | `trinity:generator` `trinity:evaluator` の終了時刻を `trinity.log` に追記 |
 
-`UserPromptSubmit` がプリフライトの責務を持つことが重要である。これは Claude ではなくハーネスが実行するので、`/trinity` が起動した瞬間に「git リポジトリ内かつ working tree が clean」が保証される。プロンプト側で再実装する必要はない。
+汎用の `PostToolUse`（agent/command 定義の YAML frontmatter 欠損警告）はプラグイン外、ルートの `settings.json` に置く。Trinity に閉じた挙動ではないからである。
+
+`UserPromptSubmit` がプリフライトの責務を持つことが重要である。これは Claude ではなくハーネスが実行するので、`/trinity:run` が起動した瞬間に「git リポジトリ内かつ working tree が clean」が保証される。プロンプト側で再実装する必要はない。
 
 ### 事前承認ツール
 
-`permissions.allow` には次が入っている。
+trinity 固有分は `plugins/trinity/settings.json` に。
 
-- 読み取り専用 git：`status` `log` `diff` `show` `rev-parse`
 - worktree 操作：`git worktree`、`git -C <path> ...`
-- 型チェック：`tsc --noEmit`、`mypy`
-- Lint：`eslint`、`ruff`
-- テスト：`vitest run`、`jest`、`pytest`
+- 起動時の `mkdir -p`、ログの `cat .trinity/*`
+
+汎用 dev ツール（`tsc --noEmit`、`eslint`、`vitest run`、`jest`、`pytest`、`ruff`、`mypy`、`git status/log/diff/show/rev-parse`、`ls`）はリポジトリトップの `settings.json` に置く。Trinity 以外でも使うので分けて管理する。
 
 UI スモークの Playwright MCP は別途設定する。それ以外は実行時にプロンプトが出る。これは意図的である。破壊的なコマンドや珍しいコマンドは明示的な承認を必要とすべきだからである。
 

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "yujis-personal",
+  "description": "Personal Claude Code marketplace — agent-flow harnesses and tooling.",
+  "owner": {
+    "name": "winnie279"
+  },
+  "plugins": [
+    {
+      "name": "trinity",
+      "description": "Planner → Generator → Evaluator pipeline. Runs in an isolated git worktree, judges PASS/FAIL, opens a PR.",
+      "category": "development",
+      "source": "./plugins/trinity"
+    }
+  ]
+}

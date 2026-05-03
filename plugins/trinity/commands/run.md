@@ -1,9 +1,9 @@
 ---
-description: Planner → Generator → Evaluator のハーネスパイプラインを実行する。使用例 `/trinity <要件>` または `/trinity --max-iter=5 <要件>`。
-argument-hint: [--max-iter=N] <1〜4文の要件>
+description: "Planner → Generator → Evaluator のハーネスパイプラインを実行する。使用例 `/trinity:run <要件>` または `/trinity:run --max-iter=5 <要件>`。"
+argument-hint: "[--max-iter=N] <1〜4文の要件>"
 ---
 
-# /trinity — 3エージェント・ハーネスパイプライン
+# /trinity:run — 3エージェント・ハーネスパイプライン
 
 ハーネスを取り回すスラッシュコマンドである。Plannerが要件を計画に展開し、Generatorが隔離された worktree で実装してコミットし、Evaluatorが独立に判定する。判定が PASS になるか、`max_iter` に到達するまで繰り返す。最終 PASS 後、worktree のブランチを push して PR を作成する。
 
@@ -17,7 +17,7 @@ argument-hint: [--max-iter=N] <1〜4文の要件>
 
 ## プリフライト（hook 担当）
 
-`UserPromptSubmit` hook が `/trinity` を検出したとき次を強制する。あなたはこれを再実装しない。
+`UserPromptSubmit` hook が `/trinity:run` を検出したとき次を強制する。あなたはこれを再実装しない。
 
 - カレントが git リポジトリであること
 - ワーキングツリーが clean であること（汚れていれば prompt がブロックされる）
@@ -52,7 +52,7 @@ printf '=== %s run started on %s (base=%s) ===\n' "${TS}-${SLUG}" "${BRANCH}" "$
 
 ### Planner
 
-`planner` サブエージェントを次の入力で起動する。
+`trinity:planner` サブエージェントを次の入力で起動する。
 
 - 要件（原文ママ）
 - `Iteration: <n>`
@@ -64,7 +64,7 @@ printf '=== %s run started on %s (base=%s) ===\n' "${TS}-${SLUG}" "${BRANCH}" "$
 
 ### Generator
 
-`generator` サブエージェントを次の入力で起動する。
+`trinity:generator` サブエージェントを次の入力で起動する。
 
 - `RUN_DIR: <絶対パス>`
 - `WORKTREE_DIR: <絶対パス>`
@@ -75,7 +75,7 @@ Generator は `${RUN_DIR}/plan.md` を読み、`n > 1` の場合は `${RUN_DIR}/
 
 ### Evaluator
 
-`evaluator` サブエージェントを次の入力で起動する。
+`trinity:evaluator` サブエージェントを次の入力で起動する。
 
 - `RUN_DIR: <絶対パス>`
 - `WORKTREE_DIR: <絶対パス>`
@@ -115,7 +115,7 @@ printf '=== %s run ended: PASS at iter %d ===\n' "${TS}-${SLUG}" "$n" >> .trinit
 git -C "$WORKTREE_DIR" push -u origin "$BRANCH"
 ```
 
-3. PR を作成する。`/trinity` の起動自体がパイプライン全体（PR作成を含む）への明示的な許可なので、ユーザー確認は取らずに進める。
+3. PR を作成する。`/trinity:run` の起動自体がパイプライン全体（PR作成を含む）への明示的な許可なので、ユーザー確認は取らずに進める。
 
 PR の作成には GitHub MCP ツールを使う。スキーマが未ロードなら最初に `ToolSearch query="select:mcp__github__create_pull_request"` で読み込む。リポジトリ owner/repo は `git -C "$WORKTREE_DIR" remote get-url origin` から取り出す。
 

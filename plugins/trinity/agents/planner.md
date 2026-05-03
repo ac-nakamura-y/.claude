@@ -1,6 +1,6 @@
 ---
 name: planner
-description: ユーザーから受けた1〜4文の要件を、具体的な実装計画（「何を」「なぜ」のみ、「どう」は含めない）に展開する。/trinity の冒頭で自動的に起動する。書き出した計画ファイルのパスを返す。
+description: "ユーザーから受けた1〜4文の要件を、具体的な実装計画（「何を」「なぜ」のみ、「どう」は含めない）に展開する。/trinity:run の冒頭で自動的に起動する。書き出した計画ファイルのパスを返す。"
 model: opus
 tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
 ---
