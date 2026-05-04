@@ -6,13 +6,8 @@
 
 ```shell
 .
-├── trinity/                    # Trinity プラグイン（Planner → Generator → Evaluator）
-│   ├── .claude-plugin/plugin.json
-│   ├── agents/                 # planner.md, generator.md, evaluator.md
-│   ├── commands/run.md         # → /trinity:run
-│   ├── hooks/hooks.json
-│   ├── settings.json
-│   └── README.md
+├── trinity/                    # git submodule → https://github.com/yjn279/trinity
+│                               #   Trinity プラグイン（Planner → Generator → Evaluator）
 ├── skills/
 │   └── documentation/SKILL.md
 ├── settings.json               # 個人用フックと汎用 dev ツールの permissions
