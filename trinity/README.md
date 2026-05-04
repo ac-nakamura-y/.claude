@@ -24,13 +24,13 @@ Anthropic の Planner / Generator / Evaluator パターンを Claude Code のサ
 
 | 区分 | 名前 | 実体 | 責務 |
 | --- | --- | --- | --- |
-| 設定 | `plugin.json` | `plugins/trinity/.claude-plugin/plugin.json` | プラグイン名・バージョンの宣言 |
-| 設定 | `settings.json` | `plugins/trinity/settings.json` | trinity 固有の事前承認ツール |
-| 設定 | `hooks.json` | `plugins/trinity/hooks/hooks.json` | SessionStart / UserPromptSubmit / SubagentStop |
-| 設定 | `/trinity:run` | `plugins/trinity/commands/run.md` | オーケストレーターのプロンプト |
-| 設定 | `trinity:planner` | `plugins/trinity/agents/planner.md` | Planner のシステムプロンプト |
-| 設定 | `trinity:generator` | `plugins/trinity/agents/generator.md` | Generator のシステムプロンプト |
-| 設定 | `trinity:evaluator` | `plugins/trinity/agents/evaluator.md` | Evaluator のシステムプロンプト |
+| 設定 | `plugin.json` | `trinity/.claude-plugin/plugin.json` | プラグイン名・バージョンの宣言 |
+| 設定 | `settings.json` | `trinity/settings.json` | trinity 固有の事前承認ツール |
+| 設定 | `hooks.json` | `trinity/hooks/hooks.json` | SessionStart / UserPromptSubmit / SubagentStop |
+| 設定 | `/trinity:run` | `trinity/commands/run.md` | オーケストレーターのプロンプト |
+| 設定 | `trinity:planner` | `trinity/agents/planner.md` | Planner のシステムプロンプト |
+| 設定 | `trinity:generator` | `trinity/agents/generator.md` | Generator のシステムプロンプト |
+| 設定 | `trinity:evaluator` | `trinity/agents/evaluator.md` | Evaluator のシステムプロンプト |
 | アクター | UserPromptSubmit hook | shell（hooks.json） | プリフライト（git 状態の検証） |
 | アクター | Orchestrator | Claude（メイン会話） | run ディレクトリと worktree の作成、各段の起動、最終化 |
 | アクター | Planner | Claude サブエージェント（opus） | 要件 → `plan.md` |
@@ -148,10 +148,10 @@ Evaluator の独立性は、ファイルベースの通信によって構造的�
 
 ## 4. ディレクトリ構成
 
-エージェント定義とコマンドは `plugins/trinity/` プラグイン内に、ランタイム成果物は実行プロジェクトの `.trinity/` 以下に置く。前者はリポジトリにコミットし、後者は `.gitignore` で除外する。
+エージェント定義とコマンドは `trinity/` プラグイン内に、ランタイム成果物は実行プロジェクトの `.trinity/` 以下に置く。前者はリポジトリにコミットし、後者は `.gitignore` で除外する。
 
 ```shell
-plugins/trinity/
+trinity/
 ├── .claude-plugin/
 │   └── plugin.json     # プラグイン宣言（name, version, author）
 ├── agents/
@@ -256,7 +256,7 @@ trinity/20260429T153000Z-add-theme-toggle  ← 新規ブランチ
 
 trinity 固有のフックと事前承認ツールはプラグイン配下に閉じている。汎用の dev ツール権限は親リポジトリ（`~/.claude/`）の `settings.json` に置く。
 
-### フック（`plugins/trinity/hooks/hooks.json`）
+### フック（`trinity/hooks/hooks.json`）
 
 | フック | タイミング | 役割 |
 | --- | --- | --- |
@@ -270,7 +270,7 @@ trinity 固有のフックと事前承認ツールはプラグイン配下に閉
 
 ### 事前承認ツール
 
-trinity 固有分は `plugins/trinity/settings.json` に。
+trinity 固有分は `trinity/settings.json` に。
 
 - worktree 操作：`git worktree`、`git -C <path> ...`
 - 起動時の `mkdir -p`、ログの `cat .trinity/*`

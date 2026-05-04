@@ -3,9 +3,9 @@
 #
 # Idempotent. Safe to run multiple times.
 #
-# - agents/, commands/, skills/, hooks/, CLAUDE.md are SYMLINKED so future repo
-#   edits flow into ~/.claude/ automatically (and any direct edits to
-#   ~/.claude/agents/foo.md flow back into the repo for version control).
+# - skills/, CLAUDE.md are SYMLINKED so future repo edits flow into ~/.claude/
+#   automatically (and any direct edits to ~/.claude/skills/foo flow back into
+#   the repo for version control).
 # - settings.json is COPIED, not symlinked, because the `claude` CLI writes
 #   to ~/.claude/settings.json (e.g. when installing plugins or auto-granting
 #   permissions). A symlink would push those writes back into the repo.
@@ -100,7 +100,7 @@ echo "  target: ${HOME_CLAUDE}"
 echo
 
 echo "Symlinking entries..."
-for name in agents commands skills hooks CLAUDE.md; do
+for name in skills CLAUDE.md; do
   link_path "$name"
 done
 copy_settings
