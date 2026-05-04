@@ -1,62 +1,23 @@
 # personal `~/.claude/` config
 
-このリポジトリは **そのまま `~/.claude/` の中身として動かす** ための個人設定リポジトリである。エージェント・コマンド・フック・スキル・プラグインを一括管理する。
-
-## 何がここにあるのか
-
-- 「Planner → Generator → Evaluator」のような **複数ファイルにまたがる系** はリポジトリ直下に `<name>/` として1つのプラグインに閉じる。リポジトリ自身が一人用 marketplace（`.claude-plugin/marketplace.json`）になっており、新しい系は1ディレクトリ＋1エントリで追加できる
-- 個人用の単発 skill / 汎用 settings は、リポジトリ直下（`skills/` `settings.json`）に置く
-- `~/.claude/` の中で Claude Code 自身が管理するランタイム領域（`sessions/` `projects/` `plugins/cache/` `todos/` 等）はリポジトリで触らない（`bin/install.sh` は個別パスだけ symlink する）
+このリポジトリは **そのまま `~/.claude/` の中身として動かす** ための個人設定リポジトリである。
 
 ## ディレクトリ構成
 
 ```shell
 .
-├── .claude-plugin/
-│   └── marketplace.json        # 一人用 marketplace（プラグイン目次）
-├── trinity/                    # プラグインルート（系ごとに1ディレクトリ）
+├── trinity/                    # Trinity プラグイン（Planner → Generator → Evaluator）
 │   ├── .claude-plugin/plugin.json
 │   ├── agents/                 # planner.md, generator.md, evaluator.md
 │   ├── commands/run.md         # → /trinity:run
-│   ├── hooks/hooks.json        # 系専用フック
-│   ├── settings.json           # 系専用 permissions
+│   ├── hooks/hooks.json
+│   ├── settings.json
 │   └── README.md
 ├── skills/
 │   └── documentation/SKILL.md
 ├── settings.json               # 個人用フックと汎用 dev ツールの permissions
-├── CLAUDE.md                   # personal memory
-├── bin/install.sh              # symlink で ~/.claude/ に橋渡しする
-├── .gitignore
 └── README.md
 ```
-
-## インストール
-
-```shell
-git clone <this-repo> ~/Documents/.claude
-cd ~/Documents/.claude
-./bin/install.sh
-```
-
-`bin/install.sh` は次を行う。冪等で、既存ファイル/ディレクトリは `<name>.bak.<UTC-timestamp>` に退避してから貼る。
-
-1. `skills/` `CLAUDE.md` を `~/.claude/` 配下に **symlink**（リポジトリ側の編集が直接反映される）
-2. `settings.json` は **コピー**（`~/.claude/settings.json` に既存があれば上書きしない）。`claude` CLI が `~/.claude/settings.json` に書き戻す（プラグイン登録、権限自動承認など）ためで、symlink にすると CLI の書き込みがリポジトリに逆流する。リポジトリの `settings.json` を `~/.claude/` に強制反映したいときは `./bin/install.sh --force-settings`
-3. このリポジトリを Claude Code の personal marketplace として登録（`claude plugin marketplace add <repo>`）
-4. trinity プラグインをインストール（`claude plugin install trinity@yujis-personal`）
-
-`claude` CLI が PATH にない環境ではステップ3と4は手動で行う。
-
-新しい Claude Code セッションを開いて `/trinity:run --max-iter=2 <要件>` で動作確認できる。
-
-## 新しい系を追加する
-
-Trinity と同様の「複数 agent ＋ コマンド＋専用フック」のパッケージを追加するときの手順。
-
-1. リポジトリ直下に `<name>/` を作る。最低限 `.claude-plugin/plugin.json` と `agents/` か `commands/` のいずれか
-2. 専用フックや専用権限が必要なら `<name>/hooks/hooks.json` と `<name>/settings.json` に置く（**ルートの `settings.json` には足さない**）
-3. `.claude-plugin/marketplace.json` の `plugins` 配列に1エントリ追記（`source: ./<name>`）
-4. `./bin/install.sh` を再実行（既登録の marketplace 更新も冪等）
 
 ## ランタイム artifacts
 
