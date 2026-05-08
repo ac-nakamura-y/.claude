@@ -1,0 +1,14 @@
+{
+  "name": "yuji-local",
+  "owner": {
+    "name": "Yuji"
+  },
+  "description": "Local plugins for Yuji's machine",
+  "plugins": [
+    {
+      "name": "trinity",
+      "source": "./trinity",
+      "description": "Planner → Generator → Evaluator pipeline. Runs in an isolated git worktree, judges PASS/FAIL, opens a PR."
+    }
+  ]
+}
