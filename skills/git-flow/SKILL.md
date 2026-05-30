@@ -121,5 +121,5 @@ gh pr create --fill
 # レビュー承認後
 gh pr merge --squash --delete-branch
 git worktree remove ../login-redirect
-gh issue close 27 --reason completed
+gh issue close <番号> --reason completed
 ```
