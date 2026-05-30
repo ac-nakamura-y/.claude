@@ -51,16 +51,36 @@ description: git リポジトリの初期化、作業ブランチと worktree �
 - `refactor`: 動作を変えないコードの整理・改善
 - `test`: テストの追加や修正
 
-`<description>` は kebab-case の英語短句とし、1〜5 語程度に収める。変更内容が一言で伝わる具体的な動詞句を選ぶ。人名・連番・日付スタンプ・`tmp`・`wip` のような意味を持たない語は避ける。
+`<description>` は kebab-case の英語短句とし、2〜5 語に収める。変更内容が一言で伝わる具体的な動詞句を選ぶ。人名・連番・日付スタンプ・`tmp`・`wip` のような意味を持たない語は避ける。
+
+スラッグは次のいずれかを起点に生成する。
+
+- Issue 番号がある場合: その Issue のタイトルや本文から変更内容を抽出してスラッグ化する。
+- 要件文のみの場合: 要件を要約した動詞句を kebab-case に変換してスラッグとする。
+- 継続対象の PR タイトルがある場合: PR タイトルをそのまま使わず、kebab-case・語数・避ける語の上記規約に合わせて整形する。
+
+リポジトリパス（作業中のリポジトリ）とベースブランチ（既定 `origin/main`）は worktree 作成時に明示入力として要求せず、文脈から推測する。
 
 良いブランチ名の例: `feat/add-search-filter`、`fix/login-redirect-loop`
 悪いブランチ名の例: `feature1`、`tmp`、`yuji-branch`、`20260509`
 
 worktree は、ベースブランチ（既定では `origin/main`、指定があれば対象のブランチや対象 Pull Request に対応するブランチ）の最新コミットを起点として切り出す。同一ブランチに対する既存の worktree が残っている場合は新規作成せず、それを再利用する。
 
+worktree の配置と命名には以下の規約に従う。配置先をリポジトリ配下に統一することで、どのリポジトリでも worktree の場所が一貫し、ローカル専用ファイルのコピー先も固定しやすくなる。
+
+- 配置先: リポジトリ外ではなく、対象リポジトリ配下の `./.worktrees/` ディレクトリに置く。
+- 命名: ブランチ名の `/` を `-` に変換した文字列をディレクトリ名とする（例: ブランチ `feat/triple-s-mastra-migration` → `.worktrees/feat-triple-s-mastra-migration`）。
+
+新規 worktree を作成するときの標準動作は次のとおりである。
+
+1. 同名の worktree が既に存在する場合は新規作成せず、それを再利用する。作業ツリーが壊れているなど再利用できない事情がある場合に限り、削除してから再作成する。
+2. ベースブランチの最新を取得し、`./.worktrees/<変換後のブランチ名>` に worktree を作成する。
+3. Git 管理外のローカル専用設定ファイル（例: `.env`、サービスアカウント JSON）が必要な場合は、ベースの作業ディレクトリから対応する相対パスでコピーする（例: `cp .env .worktrees/feat-my-feature/.env`）。
+4. コピー後、作業ディレクトリに移動して即座に開発を始められる状態に整える。
+
 ```shell
 git fetch origin <base>
-git worktree add -b <type>/<description> <path> origin/<base>
+git worktree add -b <type>/<description> ./.worktrees/<dir> origin/<base>
 ```
 
 ## Cleanup
@@ -103,12 +123,13 @@ git switch -c feat/initial-setup
 
 ### 例 2: 既存リポジトリで worktree を切り出して作業を開始する
 
-`main` の最新を取得し、`fix/login-redirect-loop` ブランチを `origin/main` から派生させて worktree にチェックアウトする。
+`main` の最新を取得し、`fix/login-redirect-loop` ブランチを `origin/main` から派生させてリポジトリ配下の `./.worktrees/fix-login-redirect-loop` に worktree を作成する。その後、ローカル専用設定ファイルを必要に応じてコピーし、すぐに作業を始められる状態に整える。
 
 ```shell
 git fetch origin main
-git worktree add -b fix/login-redirect-loop ../login-redirect origin/main
-cd ../login-redirect
+git worktree add -b fix/login-redirect-loop ./.worktrees/fix-login-redirect-loop origin/main
+# ローカル専用設定ファイルが必要な場合はコピーする（例: cp .env .worktrees/fix-login-redirect-loop/.env）
+cd ./.worktrees/fix-login-redirect-loop
 ```
 
 ### 例 3: PR を作成し、マージ後にクリーンアップする
@@ -120,6 +141,6 @@ git push -u origin fix/login-redirect-loop
 gh pr create --fill
 # レビュー承認後
 gh pr merge --squash --delete-branch
-git worktree remove ../login-redirect
+git worktree remove ./.worktrees/fix-login-redirect-loop
 gh issue close <番号> --reason completed
 ```
