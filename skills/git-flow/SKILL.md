@@ -58,9 +58,21 @@ description: git リポジトリの初期化、作業ブランチと worktree �
 
 worktree は、ベースブランチ（既定では `origin/main`、指定があれば対象のブランチや対象 Pull Request に対応するブランチ）の最新コミットを起点として切り出す。同一ブランチに対する既存の worktree が残っている場合は新規作成せず、それを再利用する。
 
+worktree の配置と命名には以下の規約に従う。配置先をリポジトリ配下に統一することで、どのリポジトリでも worktree の場所が一貫し、ローカル専用ファイルのコピー先も固定しやすくなる。
+
+- 配置先: リポジトリ外ではなく、対象リポジトリ配下の `./.worktrees/` ディレクトリに置く。
+- 命名: ブランチ名の `/` を `-` に変換した文字列をディレクトリ名とする（例: ブランチ `feat/triple-s-mastra-migration` → `.worktrees/feat-triple-s-mastra-migration`）。
+
+新規 worktree を作成するときの標準動作は次のとおりである。
+
+1. 同名の worktree が既に存在する場合は新規作成せず、それを再利用する。作業ツリーが壊れているなど再利用できない事情がある場合に限り、削除してから再作成する。
+2. ベースブランチの最新を取得し、 `./.worktrees/<変換後のブランチ名>` に worktree を作成する。
+3. Git 管理外のローカル専用設定ファイル（例: `.env`、サービスアカウント JSON）が必要な場合は、ベースの作業ディレクトリから対応する相対パスでコピーする（例: `cp .env .worktrees/feat-my-feature/.env`）。
+4. コピー後、作業ディレクトリに移動して即座に開発を始められる状態に整える。
+
 ```shell
 git fetch origin <base>
-git worktree add -b <type>/<description> <path> origin/<base>
+git worktree add -b <type>/<description> ./.worktrees/<dir> origin/<base>
 ```
 
 ## Cleanup
