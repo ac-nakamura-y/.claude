@@ -115,12 +115,13 @@ git switch -c feat/initial-setup
 
 ### 例 2: 既存リポジトリで worktree を切り出して作業を開始する
 
-`main` の最新を取得し、`fix/login-redirect-loop` ブランチを `origin/main` から派生させて worktree にチェックアウトする。
+`main` の最新を取得し、`fix/login-redirect-loop` ブランチを `origin/main` から派生させてリポジトリ配下の `./.worktrees/fix-login-redirect-loop` に worktree を作成する。その後、ローカル専用設定ファイルを必要に応じてコピーし、すぐに作業を始められる状態に整える。
 
 ```shell
 git fetch origin main
-git worktree add -b fix/login-redirect-loop ../login-redirect origin/main
-cd ../login-redirect
+git worktree add -b fix/login-redirect-loop ./.worktrees/fix-login-redirect-loop origin/main
+# ローカル専用設定ファイルが必要な場合はコピーする（例: cp .env .worktrees/fix-login-redirect-loop/.env）
+cd ./.worktrees/fix-login-redirect-loop
 ```
 
 ### 例 3: PR を作成し、マージ後にクリーンアップする
