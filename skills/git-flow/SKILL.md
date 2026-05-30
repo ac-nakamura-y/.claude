@@ -133,6 +133,6 @@ git push -u origin fix/login-redirect-loop
 gh pr create --fill
 # レビュー承認後
 gh pr merge --squash --delete-branch
-git worktree remove ../login-redirect
+git worktree remove ./.worktrees/fix-login-redirect-loop
 gh issue close <番号> --reason completed
 ```
