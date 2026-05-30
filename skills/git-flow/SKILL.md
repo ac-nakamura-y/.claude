@@ -79,6 +79,12 @@ git worktree add -b <type>/<description> <path> origin/<base>
    git push origin --delete <type>/<description>
    ```
 
+4. マージ後は、その作業に関連する GitHub Issue を完了としてクローズする。
+
+   ```shell
+   gh issue close <番号> --reason completed
+   ```
+
 ## 例
 
 次の例は、このスキルが対象とする典型的なフェーズ移行を示す。
@@ -107,7 +113,7 @@ cd ../login-redirect
 
 ### 例 3: PR を作成し、マージ後にクリーンアップする
 
-変更を push して PR を作成し、レビュー承認後にマージしてからブランチと worktree を削除する。
+変更を push して PR を作成し、レビュー承認後にマージしてからブランチと worktree を削除し、関連 Issue をクローズする。
 
 ```shell
 git push -u origin fix/login-redirect-loop
@@ -115,4 +121,5 @@ gh pr create --fill
 # レビュー承認後
 gh pr merge --squash --delete-branch
 git worktree remove ../login-redirect
+gh issue close 27 --reason completed
 ```
