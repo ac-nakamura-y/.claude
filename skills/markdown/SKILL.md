@@ -1,13 +1,13 @@
 ---
 name: markdown
-description: Markdownファイルを書く・編集する際に必ず使用するスキル。READMEやドキュメント、技術仕様書、Issueテンプレート、ノート、議事録など、`.md` 形式のファイルを新規作成または更新する全てのケースで適用する。見出し・リスト・テキスト・テーブル・Mermaid図の体系的な構造化ルールを定め、読みやすく一貫性のあるドキュメントを生成する。「ドキュメントを書いて」「READMEを更新して」「議事録をまとめて」「Markdownで書いて」などの依頼があった際は、明示的に指示されなくても本スキルを参照する。
+description: Skill that must be used whenever writing or editing Markdown files. Apply it in every case of creating or updating `.md` files, including READMEs, documentation, technical specifications, Issue templates, notes, and meeting minutes. It defines systematic structuring rules for headings, lists, text, tables, and Mermaid diagrams to produce readable and consistent documents. Always refer to this skill for requests such as writing documentation, updating a README, summarizing meeting minutes, or writing in Markdown, even when not explicitly instructed.
 ---
 
-# Markdown 作成スキル
+# Markdown
 
 Markdownファイルは、文章による完全な説明、見出し・リスト・テーブルによる体系的な整理、必要に応じたMermaid図による視覚的補助で構成する。読み手が論理構造を辿れるよう、情報の羅列ではなく論理ピラミッドの構築を意識する。
 
-## 基本原則
+## Principles
 
 体系性・簡潔性・論理性の3点を最重視する。装飾や記号の多用は読み手の認知負荷を上げるため、必要最低限に抑える。
 
@@ -17,17 +17,22 @@ Markdownファイルは、文章による完全な説明、見出し・リスト
 
 既存ドキュメントを更新する際は、言い回しなど枝葉の表現を局所的に書き換えるのではなく、文書全体の論理構造を俯瞰したうえで再分解と再構築を経て本質的に更新する。部分的な修正は構造の歪みや論理の断絶を生むため、骨格レベルで整合を取り直す。
 
-## 記法
+## Notation
 
-### 見出し
+### Front Matter
+
+Front Matter のメタデータは、キーと値のいずれも英語で記載する。
+
+### Headings
 
 見出しは文章の論理構造を可視化するために使用する。読み手が目次として一覧したときに、文書全体の骨格が把握できる粒度で設計する。
 
+- H1 および H2 見出しは基本的に英語で記載する（例: Introduction / Overview）。
+- 見出しは文章ではなく、簡潔な1〜3語の組み合わせにする（例: Getting Started / References / How to Work）。
 - 通し番号や絵文字は付与しない。番号や装飾は構造そのものを曖昧にする。
-- 見出しは体系的でシンプルな単語にする。長い説明文を見出しにしない。
 - 階層は内容の論理構造に従って自然に決める。装飾目的で深くしない。
 
-### リスト
+### Lists
 
 リストは兄弟関係（並列・直列）にある複数要素を扱うときに使用する。要素を並べる前に、必ずまとめ・結論・示唆を文章で記載し、なぜその要素群を提示するのかを示す。
 
@@ -36,7 +41,7 @@ Markdownファイルは、文章による完全な説明、見出し・リスト
 - ネストは1階層までとする。2階層以上が必要な場合はページや見出しの分割を検討する。
 - 要素数が5つ以上になる場合は、テーブルやデータベースの利用を検討する。視認性が落ちるため。
 
-### テキスト
+### Text
 
 句読点や改行を過度に挟まず、完全な文章を記載する。1文を細切れにせず、主述を明確にした文を書く。
 
@@ -45,11 +50,11 @@ Markdownファイルは、文章による完全な説明、見出し・リスト
 - 太字：必要最低限の利用に留める。乱発すると強調の効果が失われる。
 - インラインコードブロック：数値や固有の値を記載する際に使用する。コードブロックの前後には半角スペースを挿入する（例： `42` 件、 `userId` フィールド）。
 
-### テーブル
+### Tables
 
 複数項目を列方向に比較する場合や、リスト要素が5つ以上になる場合に使用する。ヘッダーの区切り線は各列ともハイフン、もしくはコロン3つの組み合わせとする（例： `---` , `:--` , `:-:` ）。
 
-### その他の記法
+### Others
 
 見出し・リスト・テキスト・テーブル・Mermaid のいずれにも属さない記法は、構造を曖昧にしないために利用範囲を限定する。
 
@@ -74,13 +79,14 @@ flowchart LR
   process --> response[応答]
 ```
 
-## チェックリスト
+## Checklist
 
 Markdownを書き終えたら、以下を確認する。
 
 | 観点 | 確認内容 |
 | :-- | :-- |
-| 見出し | 番号や絵文字が付いていないか、簡潔か |
+| 見出し | H1/H2 は英語か、1〜3語の簡潔な見出しで文章になっていないか、番号や絵文字が付いていないか |
+| Front Matter | メタデータのキーと値が英語か |
 | リスト | ネストが1階層以内か、要素5つ以上ならテーブル化を検討したか |
 | 文章 | 完全な文章で書かれているか、リストの前にまとめがあるか |
 | 太字 | 乱用していないか |
@@ -89,7 +95,7 @@ Markdownを書き終えたら、以下を確認する。
 | テーブル | ヘッダー区切りが規定の形式か |
 | Mermaid | 物理名camelCase・論理名日本語短語・CSS未使用か |
 
-## 参照
+## References
 
 併用すべきスキルを以下に示す。
 
