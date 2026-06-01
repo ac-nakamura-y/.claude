@@ -66,21 +66,22 @@ description: git リポジトリの初期化、作業ブランチと worktree �
 
 worktree は、ベースブランチ（既定では `origin/main`、指定があれば対象のブランチや対象 Pull Request に対応するブランチ）の最新コミットを起点として切り出す。同一ブランチに対する既存の worktree が残っている場合は新規作成せず、それを再利用する。
 
-worktree の配置と命名には以下の規約に従う。配置先をリポジトリ配下に統一することで、どのリポジトリでも worktree の場所が一貫し、ローカル専用ファイルのコピー先も固定しやすくなる。
+worktree の配置と命名には以下の規約に従う。配置先を `<repo-basename>.worktrees/` に統一することで、どのリポジトリでも worktree の場所が一貫し、ローカル専用ファイルのコピー先も固定しやすくなる。
 
-- 配置先: リポジトリ外ではなく、対象リポジトリ配下の `./.worktrees/` ディレクトリに置く。
-- 命名: ブランチ名の `/` を `-` に変換した文字列をディレクトリ名とする（例: ブランチ `feat/triple-s-mastra-migration` → `.worktrees/feat-triple-s-mastra-migration`）。
+- 配置先: 対象リポジトリの親ディレクトリ直下の `<repo-basename>.worktrees/` に置く（例: `ac-llm-platform` → `~/Documents/ac-llm-platform.worktrees/`）。
+- 命名: ブランチ名の `/` を `-` に変換した文字列をディレクトリ名とする（例: ブランチ `feat/shiseido-setup` → `ac-llm-platform.worktrees/feat-shiseido-setup`）。
 
 新規 worktree を作成するときの標準動作は次のとおりである。
 
 1. 同名の worktree が既に存在する場合は新規作成せず、それを再利用する。作業ツリーが壊れているなど再利用できない事情がある場合に限り、削除してから再作成する。
-2. ベースブランチの最新を取得し、`./.worktrees/<変換後のブランチ名>` に worktree を作成する。
-3. Git 管理外のローカル専用設定ファイル（例: `.env`、サービスアカウント JSON）が必要な場合は、ベースの作業ディレクトリから対応する相対パスでコピーする（例: `cp .env .worktrees/feat-my-feature/.env`）。
-4. コピー後、作業ディレクトリに移動して即座に開発を始められる状態に整える。
+2. ベースブランチの最新を取得し、`../<repo-basename>.worktrees/<変換後のブランチ名>` に worktree を作成する。
+3. Git 管理外のローカル専用設定ファイル（例: `.env`、サービスアカウント JSON）が必要な場合は、メイン clone から対応する相対パスでコピーする（例: `cp .env ../ac-llm-platform.worktrees/feat-my-feature/.env`）。
+4. 対応する `.code-workspace` の `folders` に worktree を追加する。
+5. 作業ディレクトリに移動して即座に開発を始められる状態に整える。
 
 ```shell
 git fetch origin <base>
-git worktree add -b <type>/<description> ./.worktrees/<dir> origin/<base>
+git worktree add -b <type>/<description> ../<repo-basename>.worktrees/<dir> origin/<base>
 ```
 
 ## Cleanup
@@ -91,7 +92,7 @@ git worktree add -b <type>/<description> ./.worktrees/<dir> origin/<base>
 
 2. PR は独断でマージしない。必ずレビュー依頼を行い、承認を得てからスカッシュマージする。履歴を機能・修正単位で 1 コミットに集約するため、マージ方式は squash で固定する。
 
-3. マージ後は関連するブランチと worktree を削除し、ローカル・リモートともクリーンな状態に戻す。
+3. マージ後は関連するブランチと worktree を削除し、`.code-workspace` の `folders` から当該 worktree を除去する。ローカル・リモートともクリーンな状態に戻す。
 
    ```shell
    git worktree remove <path>
@@ -123,13 +124,14 @@ git switch -c feat/initial-setup
 
 ### 例 2: 既存リポジトリで worktree を切り出して作業を開始する
 
-`main` の最新を取得し、`fix/login-redirect-loop` ブランチを `origin/main` から派生させてリポジトリ配下の `./.worktrees/fix-login-redirect-loop` に worktree を作成する。その後、ローカル専用設定ファイルを必要に応じてコピーし、すぐに作業を始められる状態に整える。
+`main` の最新を取得し、`fix/login-redirect-loop` ブランチを `origin/main` から派生させて `../ac-llm-platform.worktrees/fix-login-redirect-loop` に worktree を作成する。その後、ローカル専用設定ファイルを必要に応じてコピーし、すぐに作業を始められる状態に整える。
 
 ```shell
 git fetch origin main
-git worktree add -b fix/login-redirect-loop ./.worktrees/fix-login-redirect-loop origin/main
-# ローカル専用設定ファイルが必要な場合はコピーする（例: cp .env .worktrees/fix-login-redirect-loop/.env）
-cd ./.worktrees/fix-login-redirect-loop
+git worktree add -b fix/login-redirect-loop ../ac-llm-platform.worktrees/fix-login-redirect-loop origin/main
+# ローカル専用設定ファイルが必要な場合はコピーする（例: cp .env ../ac-llm-platform.worktrees/fix-login-redirect-loop/.env）
+# ac-llm-platform.code-workspace の folders に当該 worktree を追加
+cd ../ac-llm-platform.worktrees/fix-login-redirect-loop
 ```
 
 ### 例 3: PR を作成し、マージ後にクリーンアップする
@@ -141,6 +143,6 @@ git push -u origin fix/login-redirect-loop
 gh pr create --fill
 # レビュー承認後
 gh pr merge --squash --delete-branch
-git worktree remove ./.worktrees/fix-login-redirect-loop
+git worktree remove ../ac-llm-platform.worktrees/fix-login-redirect-loop
 gh issue close <番号> --reason completed
 ```
