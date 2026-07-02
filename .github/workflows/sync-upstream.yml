@@ -1,0 +1,42 @@
+name: Sync upstream/main
+
+on:
+  schedule:
+    # Mon 09:00 JST (00:00 UTC)
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge upstream/main
+        run: |
+          git remote add upstream https://github.com/yjn279/.claude.git
+          git fetch upstream main
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "Already up to date with upstream/main"
+            exit 0
+          fi
+          git merge --no-edit upstream/main -m "chore: sync upstream/main"
+
+      - name: Push
+        run: git push origin main
