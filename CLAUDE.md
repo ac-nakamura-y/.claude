@@ -36,3 +36,5 @@ gh pr create --repo ac-nakamura-y/.claude --base main --head <branch>
 ```
 
 `gh pr create --fill` のみでは upstream 向け PR になる場合があるため、必ず `--repo ac-nakamura-y/.claude` を指定する。
+
+`upstream/main` は GitHub Actions（`.github/workflows/sync-upstream.yml`）で毎週月曜 9:00 JST に `main` へ自動 merge する。手動実行は Actions タブの「Sync upstream/main」から行える。コンフリクト時はワークフローが失敗するため、ローカルで解消して push する。
