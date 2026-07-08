@@ -10,3 +10,7 @@
 !/README.md
 !/settings.json
 !/skills/
+
+# macOS
+.DS_Store
+**/.DS_Store
