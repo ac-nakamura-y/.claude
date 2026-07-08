@@ -89,13 +89,22 @@ gh pr merge --squash
 
 ## Cleanup
 
-マージ後に環境を整えるフェーズである。残骸を残さないよう、ブランチと worktree を削除し、関連する GitHub Issue をクローズする。`.code-workspace` の `folders` から当該 worktree も除去する。
+マージ後に環境を整えるフェーズである。残骸を残さないよう、ブランチと worktree を削除し、関連する GitHub Issue をクローズする。**worktree 削除だけでは不十分**で、Cursor / VS Code 用の `.code-workspace` からも当該 worktree の `folders` エントリを除去する（Start で追加したものと対になる作業）。
+
+クリーンアップの標準手順:
+
+1. worktree を削除する
+2. ローカルブランチを削除する
+3. リモートブランチを削除する（マージ済みでリモートに残っている場合）
+4. 関連する GitHub Issue をクローズする
+5. `.code-workspace` の `folders` から当該 worktree のパスを除去する
 
 ```shell
 git worktree remove ../<repo-basename>.worktrees/<dir>
 git branch -d <type>/<description>
 git push origin --delete <type>/<description>
 gh issue close <number> --reason completed
+# .code-workspace の folders から ../<repo-basename>.worktrees/<dir> に相当するエントリを削除
 ```
 
 ## 例
@@ -120,5 +129,7 @@ gh pr create --fill
 # レビュー承認後
 gh pr merge --squash --delete-branch
 git worktree remove ../ac-llm-platform.worktrees/fix-login-redirect-loop
+git branch -d fix/login-redirect-loop
+# ac-llm-platform.code-workspace の folders から fix-login-redirect-loop を削除
 gh issue close <番号> --reason completed
 ```
