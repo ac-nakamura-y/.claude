@@ -5,9 +5,9 @@ description: Skill for the full git lifecycle in this repo, from init through br
 
 # Git Flow
 
-このリポジトリにおける git 運用の方針を定める。`main` ブランチでは直接作業せず、すべての変更を作業ブランチと worktree 上で進め、Pull Request 経由で統合する。これにより、レビューを必ず通し、履歴を機能・修正単位で残し、問題発生時に特定コミットへ戻せる状態を保つ。
+このリポジトリにおける git 運用の方針を定める。リポジトリの本体ディレクトリ（worktree ではなく、常にベースブランチの最新をチェックアウトしておく場所）では直接作業はしない。変更はすべて作業ブランチと worktree 上で進め、Pull Request 経由で統合する。これにより、レビューを必ず通し、履歴を機能・修正単位で残し、問題発生時に特定コミットへ戻せる状態を保つ。
 
-ライフサイクルは Initialization・Start・Integration・Cleanup の4フェーズからなる。全体像を以下に示す。
+ライフサイクルは Initialization・Start・Integration・Cleanup の 4 フェーズからなる。全体像を以下に示す。
 
 ```mermaid
 flowchart LR
@@ -77,9 +77,7 @@ git worktree add -b <type>/<description> ../<repo-basename>.worktrees/<dir> orig
 
 ## Integration
 
-変更を Pull Request としてリモートへ統合するフェーズである。作業ブランチを push して PR を作成し、レビュー承認を経てからマージする。
-
-PR は独断でマージしない。必ずレビューを依頼し、承認を得てからマージする。履歴を機能・修正単位の 1 コミットへ集約するため、マージ方式は squash に固定する。同一ブランチの PR が既に open であれば、新規に作らず追記 push に留める。
+変更を Pull Request としてリモートへ統合するフェーズである。作業ブランチを push して PR を作成する。独断でマージせず、必ずレビューを依頼し、承認を得てからマージする。履歴を機能・修正単位の 1 コミットへ集約するため、マージ方式は squash に固定する。同一ブランチの PR が既に open であれば、新規に作らず追記 push に留める。
 
 ```shell
 git push -u origin <type>/<description>
@@ -87,9 +85,16 @@ gh pr create --fill
 gh pr merge --squash
 ```
 
+統合を完了するには、worktree から本体ディレクトリへ戻り、自分がマージした PR に限らず origin の最新を fast-forward で取り込んで手元のベースブランチをマージ後の姿に揃える。fast-forward できない場合は、マージコミットを作ったり履歴を分岐させたりせず失敗させ、対応を利用者に委ねる。
+
+```shell
+cd "$(git rev-parse --git-common-dir)/.."
+git pull --ff-only origin <base>
+```
+
 ## Cleanup
 
-マージ後に環境を整えるフェーズである。残骸を残さないよう、ブランチと worktree を削除し、関連する GitHub Issue をクローズする。**worktree 削除だけでは不十分**で、Cursor / VS Code 用の `.code-workspace` からも当該 worktree の `folders` エントリを除去する（Start で追加したものと対になる作業）。
+統合が終わった作業の残骸を削除するフェーズである。worktree とブランチを削除し、関連する GitHub Issue をクローズする。**worktree 削除だけでは不十分**で、Cursor / VS Code 用の `.code-workspace` からも当該 worktree の `folders` エントリを除去する（Start で追加したものと対になる作業）。
 
 クリーンアップの標準手順:
 
@@ -100,6 +105,7 @@ gh pr merge --squash
 5. `.code-workspace` の `folders` から当該 worktree のパスを除去する
 
 ```shell
+cd "$(git rev-parse --git-common-dir)/.."
 git worktree remove ../<repo-basename>.worktrees/<dir>
 git branch -d <type>/<description>
 git push origin --delete <type>/<description>
@@ -128,6 +134,8 @@ git push -u origin fix/login-redirect-loop
 gh pr create --fill
 # レビュー承認後
 gh pr merge --squash --delete-branch
+cd "$(git rev-parse --git-common-dir)/.."
+git pull --ff-only origin main
 git worktree remove ../ac-llm-platform.worktrees/fix-login-redirect-loop
 git branch -d fix/login-redirect-loop
 # ac-llm-platform.code-workspace の folders から fix-login-redirect-loop を削除
