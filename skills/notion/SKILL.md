@@ -30,15 +30,21 @@ Skill 同梱の `scripts/` を優先する。都度 Python を書くより、こ
 
 ## Defaults
 
-ワークスペース固有の定数は次のとおり。
+書き込み API 用の ID はリポジトリに含めない。`skills/notion/.env` またはシェル環境変数で設定する。
 
-| Key | Value |
+```bash
+cp ~/.claude/skills/notion/.env.example ~/.claude/skills/notion/.env
+# NOTION_USER_ID / NOTION_SPACE_ID を記入
+```
+
+| Key | Source |
 | :-- | :-- |
-| workspace | `activecore-swat-btoc` |
-| `SPACE_ID` | `5cdf38b3-f525-464f-9874-5ff834c33aa2` |
-| `USER_ID` | `182f67ed-59a1-44fc-8ce9-e634d4f2fbac` |
+| `NOTION_USER_ID` | `.env` または環境変数 |
+| `NOTION_SPACE_ID` | `.env` または環境変数 |
 | local db | `~/Library/Application Support/Notion/notion.db` |
 | Linear property id | `e~Y{` |
+
+ID の取得方法: Chrome DevTools の Network タブで Notion API リクエストの `x-notion-active-user-header` と `x-notion-space-id` ヘッダーを参照する。
 
 Notion URL から page ID を取り出す。例として `https://app.notion.com/p/R3-_-3a73694887fd8014ac9dedb195bcc859` なら page ID は `3a736948-87fd-8014-ac9d-edb195bcc859` である。
 
@@ -82,8 +88,8 @@ python3 ~/.claude/skills/notion/scripts/write_property.py \
 | Header | Note |
 | :-- | :-- |
 | `Cookie` | `token_v2=...` |
-| `x-notion-active-user-header` | `USER_ID` |
-| `x-notion-space-id` | `SPACE_ID` |
+| `x-notion-active-user-header` | `NOTION_USER_ID` |
+| `x-notion-space-id` | `NOTION_SPACE_ID` |
 
 ## Task Checklist
 

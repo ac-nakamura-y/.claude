@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import urllib.error
 import urllib.request
 import uuid
@@ -16,10 +17,44 @@ CHROME_COOKIE_DIRS = (
     Path.home() / "Library/Application Support/Google/Chrome/Profile 1/Cookies",
     Path.home() / "Library/Application Support/Google/Chrome/Default/Cookies",
 )
-USER_ID = "182f67ed-59a1-44fc-8ce9-e634d4f2fbac"
-SPACE_ID = "5cdf38b3-f525-464f-9874-5ff834c33aa2"
 NOTION_DB = Path.home() / "Library/Application Support/Notion/notion.db"
 HTTP_TIMEOUT_SEC = 15
+ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
+
+
+def _load_dotenv() -> None:
+    if not ENV_FILE.is_file():
+        return
+    for line in ENV_FILE.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+def _require_env(name: str) -> str:
+    value = os.environ.get(name, "").strip()
+    if not value:
+        raise RuntimeError(
+            f"{name} is not set. Copy skills/notion/.env.example to skills/notion/.env "
+            "or export the variable in your shell."
+        )
+    return value
+
+
+def get_user_id() -> str:
+    return _require_env("NOTION_USER_ID")
+
+
+def get_space_id() -> str:
+    return _require_env("NOTION_SPACE_ID")
+
+
+_load_dotenv()
 
 
 def normalize_page_id(page_id: str) -> str:
@@ -64,9 +99,10 @@ def _collect_tokens() -> list[tuple[str, str]]:
 
 
 def _validate_token(token: str) -> bool:
+    space_id = get_space_id()
     req = urllib.request.Request(
         "https://www.notion.so/api/v3/syncRecordValues",
-        data=json.dumps({"requests": [{"table": "space", "id": SPACE_ID, "version": -1}]}).encode(),
+        data=json.dumps({"requests": [{"table": "space", "id": space_id, "version": -1}]}).encode(),
         headers=notion_headers(token),
         method="POST",
     )
@@ -92,7 +128,7 @@ def get_token_v2() -> str:
     if not candidates:
         raise RuntimeError(
             "Notion token_v2 を取得できませんでした。"
-            " Chrome で Notion (activecore-swat-btoc) にログインしてください。"
+            " Chrome で Notion にログインしてください。"
         )
 
     detail = "; ".join(errors)
@@ -107,8 +143,8 @@ def notion_headers(token: str) -> dict[str, str]:
     return {
         "Content-Type": "application/json",
         "Cookie": f"token_v2={token}",
-        "x-notion-active-user-header": USER_ID,
-        "x-notion-space-id": SPACE_ID,
+        "x-notion-active-user-header": get_user_id(),
+        "x-notion-space-id": get_space_id(),
     }
 
 
@@ -132,7 +168,7 @@ def write_property(token: str, page_id: str, property_id: str, args) -> None:
                 "id": str(uuid.uuid4()),
                 "operations": [
                     {
-                        "pointer": {"table": "block", "id": page_id, "spaceId": SPACE_ID},
+                        "pointer": {"table": "block", "id": page_id, "spaceId": get_space_id()},
                         "path": ["properties", property_id],
                         "command": "set",
                         "args": args,
