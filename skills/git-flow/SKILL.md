@@ -30,25 +30,19 @@ git commit --allow-empty -m "Initial commit"
 
 作業を開始するフェーズである。命名規則に従ったブランチを、ベースブランチの最新コミットから worktree として切り出す。worktree を独立させることで、ブランチを切り替えずに並行作業や緊急対応へ移れる。
 
-ブランチ名は `<type>/<description>` 形式とする。`<type>` は変更の種類を表し、以下から選ぶ。
+ブランチ名は `ynakamura/<description>` 形式とする。
 
-| type | 用途 |
-| :-- | :-- |
-| feat | 新機能の追加 |
-| fix | バグ修正 |
-| chore | コードに直接関係しない変更（ビルド・ツールなど） |
-| docs | ドキュメントの変更 |
-| refactor | 挙動を変えないコードの整理 |
-| test | テストの追加・修正 |
+`<description>` は次のとおり決める。
 
-`<description>` は変更内容が一言で伝わる kebab-case の英語動詞句とし、2〜5 語に収める。人名・連番・日付・ `tmp` ・ `wip` のような意味を持たない語は避ける。
+- Linear Issue が与えられている場合: Issue ID を小文字にしたもの（例: `MRTTOPS-7281` → `mrttops-7281`）。ブランチ名は `ynakamura/mrttops-7281` となる。
+- それ以外の場合: 変更内容が一言で伝わる kebab-case の英語動詞句とし、2〜5 語に収める。人名・連番・日付・ `tmp` ・ `wip` のような意味を持たない語は避ける。
 
 | 評価 | 例 |
 | :-- | :-- |
-| 良い | `feat/add-search-filter` , `fix/login-redirect-loop` |
+| 良い | `ynakamura/mrttops-7281` , `ynakamura/add-search-filter` , `ynakamura/login-redirect-loop` |
 | 悪い | `feature1` , `tmp` , `yuji-branch` , `20260509` |
 
-スラッグは次のいずれかを起点に生成する。
+Linear Issue 以外では、スラッグは次のいずれかを起点に生成する。
 
 - Issue 番号がある場合: その Issue のタイトルや本文から変更内容を抽出してスラッグ化する。
 - 要件文のみの場合: 要件を要約した動詞句を kebab-case に変換してスラッグとする。
@@ -59,20 +53,20 @@ git commit --allow-empty -m "Initial commit"
 worktree はベースブランチ（既定 `origin/main`、指定があれば対象のブランチや対象 Pull Request に対応するブランチ）の最新を起点に切り出す。配置先を `<repo-basename>.worktrees/` に統一することで、どのリポジトリでも worktree の場所が一貫し、ローカル専用ファイルのコピー先も固定しやすくなる。
 
 - 配置先: 対象リポジトリの親ディレクトリ直下の `<repo-basename>.worktrees/` に置く（例: `ac-llm-platform` → `~/Documents/ac-llm-platform.worktrees/`）。
-- 命名: ブランチ名の `/` を `-` に変換した文字列をディレクトリ名とする（例: ブランチ `feat/shiseido-setup` → `ac-llm-platform.worktrees/feat-shiseido-setup`）。
+- 命名: ブランチ名の `/` を `-` に変換した文字列をディレクトリ名とする（例: ブランチ `ynakamura/mrttops-7281` → `ac-llm-platform.worktrees/ynakamura-mrttops-7281`）。
 - 同名の worktree が既にあれば再利用する。
 
 新規 worktree を作成するときの標準動作は次のとおりである。
 
 1. 同名の worktree が既に存在する場合は新規作成せず、それを再利用する。作業ツリーが壊れているなど再利用できない事情がある場合に限り、削除してから再作成する。
 2. ベースブランチの最新を取得し、`../<repo-basename>.worktrees/<変換後のブランチ名>` に worktree を作成する。
-3. Git 管理外のローカル専用設定ファイル（例: `.env`、サービスアカウント JSON）が必要な場合は、メイン clone から対応する相対パスでコピーする（例: `cp .env ../ac-llm-platform.worktrees/feat-my-feature/.env`）。
+3. Git 管理外のローカル専用設定ファイル（例: `.env`、サービスアカウント JSON）が必要な場合は、メイン clone から対応する相対パスでコピーする（例: `cp .env ../ac-llm-platform.worktrees/ynakamura-add-search-filter/.env`）。
 4. 対応する `.code-workspace` の `folders` に worktree を追加する。
 5. 作業ディレクトリに移動して即座に開発を始められる状態に整える。
 
 ```shell
 git fetch origin <base>
-git worktree add -b <type>/<description> ../<repo-basename>.worktrees/<dir> origin/<base>
+git worktree add -b ynakamura/<description> ../<repo-basename>.worktrees/<dir> origin/<base>
 ```
 
 ## Integration
@@ -80,7 +74,7 @@ git worktree add -b <type>/<description> ../<repo-basename>.worktrees/<dir> orig
 変更を Pull Request としてリモートへ統合するフェーズである。作業ブランチを push して PR を作成する。独断でマージせず、必ずレビューを依頼し、承認を得てからマージする。履歴を機能・修正単位の 1 コミットへ集約するため、マージ方式は squash に固定する。同一ブランチの PR が既に open であれば、新規に作らず追記 push に留める。
 
 ```shell
-git push -u origin <type>/<description>
+git push -u origin ynakamura/<description>
 gh pr create --fill
 gh pr merge --squash
 ```
@@ -107,37 +101,47 @@ git pull --ff-only origin <base>
 ```shell
 cd "$(git rev-parse --git-common-dir)/.."
 git worktree remove ../<repo-basename>.worktrees/<dir>
-git branch -d <type>/<description>
-git push origin --delete <type>/<description>
+git branch -d ynakamura/<description>
+git push origin --delete ynakamura/<description>
 gh issue close <number> --reason completed
 # .code-workspace の folders から ../<repo-basename>.worktrees/<dir> に相当するエントリを削除
 ```
 
 ## 例
 
-### 例 1: 既存リポジトリで worktree を切り出して作業を開始する
+### 例 1: Linear Issue から worktree を切り出して作業を開始する
 
-`main` の最新を取得し、`fix/login-redirect-loop` ブランチを `origin/main` から派生させて `../ac-llm-platform.worktrees/fix-login-redirect-loop` に worktree を作成する。
+`main` の最新を取得し、Linear Issue `MRTTOPS-7281` に対応する `ynakamura/mrttops-7281` ブランチを `origin/main` から派生させて `../ac-llm-platform.worktrees/ynakamura-mrttops-7281` に worktree を作成する。
 
 ```shell
 git fetch origin main
-git worktree add -b fix/login-redirect-loop ../ac-llm-platform.worktrees/fix-login-redirect-loop origin/main
-# ローカル専用設定ファイルが必要な場合はコピーする（例: cp .env ../ac-llm-platform.worktrees/fix-login-redirect-loop/.env）
+git worktree add -b ynakamura/mrttops-7281 ../ac-llm-platform.worktrees/ynakamura-mrttops-7281 origin/main
+# ローカル専用設定ファイルが必要な場合はコピーする（例: cp .env ../ac-llm-platform.worktrees/ynakamura-mrttops-7281/.env）
 # ac-llm-platform.code-workspace の folders に当該 worktree を追加
-cd ../ac-llm-platform.worktrees/fix-login-redirect-loop
+cd ../ac-llm-platform.worktrees/ynakamura-mrttops-7281
 ```
 
-### 例 2: PR を作成し、マージ後にクリーンアップする
+### 例 2: Linear Issue なしで worktree を切り出して作業を開始する
+
+要件からスラッグ `login-redirect-loop` を生成し、`ynakamura/login-redirect-loop` ブランチの worktree を作成する。
 
 ```shell
-git push -u origin fix/login-redirect-loop
+git fetch origin main
+git worktree add -b ynakamura/login-redirect-loop ../ac-llm-platform.worktrees/ynakamura-login-redirect-loop origin/main
+cd ../ac-llm-platform.worktrees/ynakamura-login-redirect-loop
+```
+
+### 例 3: PR を作成し、マージ後にクリーンアップする
+
+```shell
+git push -u origin ynakamura/mrttops-7281
 gh pr create --fill
 # レビュー承認後
 gh pr merge --squash --delete-branch
 cd "$(git rev-parse --git-common-dir)/.."
 git pull --ff-only origin main
-git worktree remove ../ac-llm-platform.worktrees/fix-login-redirect-loop
-git branch -d fix/login-redirect-loop
-# ac-llm-platform.code-workspace の folders から fix-login-redirect-loop を削除
+git worktree remove ../ac-llm-platform.worktrees/ynakamura-mrttops-7281
+git branch -d ynakamura/mrttops-7281
+# ac-llm-platform.code-workspace の folders から ynakamura-mrttops-7281 を削除
 gh issue close <番号> --reason completed
 ```
