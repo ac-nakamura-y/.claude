@@ -19,7 +19,11 @@
 │   └── ralph-loop/                 # subtree → anthropics/claude-plugins-official plugins/ralph-loop
 ├── skills/
 │   ├── humanizer/                  # git submodule → https://github.com/blader/humanizer
+│   ├── frontend-slides/            # git submodule → https://github.com/zarazhangrui/frontend-slides
+│   │                               #   ブラウザだけで動くスライドを作る
 │   └── documentation/SKILL.md
+├── scripts/
+│   └── fable-advice/               # 会話が要約されたあと Fable に問いかけを求めるフックの実行ファイル
 ├── settings.json               # 個人用フックと汎用 dev ツールの permissions
 └── README.md
 ```
