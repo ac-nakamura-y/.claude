@@ -55,6 +55,7 @@ worktree はベースブランチ（既定 `origin/main`、指定があれば対
 - 配置先: 対象リポジトリの親ディレクトリ直下の `<repo-basename>.worktrees/` に置く（例: `ac-llm-platform` → `~/Documents/ac-llm-platform.worktrees/`）。
 - 命名: ブランチ名の `/` を `-` に変換した文字列をディレクトリ名とする（例: ブランチ `ynakamura/mrttops-7281` → `ac-llm-platform.worktrees/ynakamura-mrttops-7281`）。
 - 同名の worktree が既にあれば再利用する。
+- 現在の作業場所がすでに worktree であれば、新たな worktree もブランチも作らず、その worktree のブランチをそのまま使う。
 
 新規 worktree を作成するときの標準動作は次のとおりである。
 
