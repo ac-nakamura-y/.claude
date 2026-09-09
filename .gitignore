@@ -16,5 +16,5 @@
 .DS_Store
 **/.DS_Store
 
-# Notion skill local config (copy from .env.example)
-skills/notion/.env
+# notion2linear skill local config (copy from .env.example)
+skills/notion2linear/.env

@@ -40,7 +40,7 @@ def _require_env(name: str) -> str:
     value = os.environ.get(name, "").strip()
     if not value:
         raise RuntimeError(
-            f"{name} is not set. Copy skills/notion/.env.example to skills/notion/.env "
+            f"{name} is not set. Copy skills/notion2linear/.env.example to skills/notion2linear/.env "
             "or export the variable in your shell."
         )
     return value
