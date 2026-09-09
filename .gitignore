@@ -12,7 +12,11 @@
 !/settings.json
 !/skills/
 !/plugins/
-!/plugins/**
+!/plugins/agent-config
+plugins/cache/
+plugins/known_marketplaces.json
+plugins/installed_plugins.json
+plugins/marketplaces/
 
 # macOS
 .DS_Store
