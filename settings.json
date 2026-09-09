@@ -26,7 +26,9 @@
     "claude-code-setup@claude-plugins-official": true,
     "example-skills@anthropic-agent-skills": true,
     "trinity@yjn279": true,
-    "fde@activecore": true
+    "fde@activecore": true,
+    "ops@activecore": true,
+    "ac-monitor@activecore": true
   },
   "extraKnownMarketplaces": {
     "yjn279": {

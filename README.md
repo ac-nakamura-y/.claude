@@ -32,7 +32,7 @@
 
 ## Plugins
 
-`plugins/agent-config` は activecore 社内の Claude Code プラグイン群の submodule です。`settings.json` の `extraKnownMarketplaces.activecore` は GitHub の `activecore-org/agent-config` を参照し、`fde@activecore` を有効化しています。
+`plugins/agent-config` は activecore 社内の Claude Code / Cursor プラグイン群の submodule です。`settings.json` の `extraKnownMarketplaces.activecore` は GitHub の `activecore-org/agent-config` を参照し、`fde` / `ops` / `ac-monitor` を有効化しています。
 
 初回 clone 後は submodule を初期化してください。
 
@@ -40,16 +40,42 @@
 git submodule update --init plugins/agent-config
 ```
 
-Claude Code で初回利用時は、マーケットプレイスとプラグインを登録してください。
+### Claude Code
+
+初回利用時は、マーケットプレイスとプラグインを登録してください。
 
 ```shell
 /plugin marketplace add activecore-org/agent-config
 /plugin install fde@activecore
+/plugin install ops@activecore
+/plugin install ac-monitor@activecore
 /reload-plugins
 /fde:notion2linear
 ```
 
-Cursor では `/fde:notion2linear` は使えません。`skills/notion2linear` は fde プラグインの Skill への symlink なので、会話内でマーケOps-改善項目の Linear 起票を依頼すると読み込まれます。
+| プラグイン | スラッシュコマンド例 |
+| :-- | :-- |
+| fde | `/fde:notion2linear` |
+| ac-monitor | `/ac-monitor:triage` |
+| ops | （スキル未実装） |
+
+### Cursor
+
+Cursor は `/fde:...` 形式のプラグインコマンドを使えません。`scripts/sync-cursor-plugins.sh` で agent-config の各プラグインを `~/.cursor/plugins/local/` に同期し、Skill は `skills/` の symlink から読み込みます。
+
+```shell
+git submodule update --init plugins/agent-config
+./scripts/sync-cursor-plugins.sh
+# Cursor を再起動、または Developer: Reload Window
+```
+
+| プラグイン | Cursor での利用 |
+| :-- | :-- |
+| fde | Skill `notion2linear`（`skills/notion2linear`）— マーケOps-改善項目の Linear 起票 |
+| ac-monitor | Skill `triage-ladder` + プラグイン MCP（CloudWatch）— 定常監視トリアージ |
+| ops | プラグイン登録のみ（スキル未実装） |
+
+submodule 更新後は `./scripts/sync-cursor-plugins.sh` を再実行してください。
 
 ## ランタイム artifacts
 
