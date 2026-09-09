@@ -11,6 +11,8 @@
 !/scripts/
 !/settings.json
 !/skills/
+!/plugins/
+!/plugins/**
 
 # macOS
 .DS_Store

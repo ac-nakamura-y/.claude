@@ -25,7 +25,8 @@
     "hookify@claude-plugins-official": true,
     "claude-code-setup@claude-plugins-official": true,
     "example-skills@anthropic-agent-skills": true,
-    "trinity@yjn279": true
+    "trinity@yjn279": true,
+    "fde@activecore": true
   },
   "extraKnownMarketplaces": {
     "yjn279": {
@@ -33,6 +34,12 @@
         "source": "github",
         "repo": "yjn279/trinity",
         "ref": "main"
+      }
+    },
+    "activecore": {
+      "source": {
+        "source": "directory",
+        "path": "./plugins/agent-config"
       }
     }
   },

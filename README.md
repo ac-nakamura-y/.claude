@@ -7,6 +7,8 @@
 ```shell
 .
 ├── plugins/
+│   ├── agent-config/               # git submodule → https://github.com/activecore-org/agent-config
+│   │                               #   activecore 社内プラグイン（fde / ops / ac-monitor）
 │   ├── trinity/                    # git submodule → https://github.com/yjn279/trinity
 │   │                               #   Trinity プラグイン（Planner → Generator → Evaluator）
 │   ├── code-review/                # subtree → anthropics/claude-plugins-official plugins/code-review
@@ -26,6 +28,20 @@
 │   └── fable-advice/               # 会話が要約されたあと Fable に問いかけを求めるフックの実行ファイル
 ├── settings.json               # 個人用フックと汎用 dev ツールの permissions
 └── README.md
+```
+
+## Plugins
+
+`plugins/agent-config` は activecore 社内の Claude Code プラグイン群です。`settings.json` の `extraKnownMarketplaces.activecore` が `./plugins/agent-config` を参照し、`fde@activecore` を有効化しています。
+
+```shell
+/fde:notion2linear
+```
+
+初回 clone 後は submodule を初期化してください。
+
+```shell
+git submodule update --init plugins/agent-config
 ```
 
 ## ランタイム artifacts

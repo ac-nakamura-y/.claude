@@ -6,3 +6,6 @@
 	path = skills/frontend-slides
 	url = https://github.com/zarazhangrui/frontend-slides.git
 	branch = main
+[submodule "plugins/agent-config"]
+	path = plugins/agent-config
+	url = https://github.com/activecore-org/agent-config.git
