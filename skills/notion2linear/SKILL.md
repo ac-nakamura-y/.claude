@@ -30,8 +30,6 @@ description: マーケOps-改善項目の「起票済み」レコードを Linea
 | 工程 | Issue description への記載 |
 | 優先度 | Linear の priority にそのまま反映 |
 
-プロパティの短い ID（例: `?lCf`）はローカル DB 固有ではありません。Notion の同期データ形式で使われる内部キーです。ローカル `notion.db` や内部 API ではこの ID がキーになりますが、MCP や UI ではプロパティ名で操作します。DB を複製した場合は ID が変わることがあるため、本 Skill では表示名を正とします。
-
 ## ワークフロー
 
 ```mermaid
