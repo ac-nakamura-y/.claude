@@ -38,8 +38,9 @@
     },
     "activecore": {
       "source": {
-        "source": "directory",
-        "path": "./plugins/agent-config"
+        "source": "github",
+        "repo": "activecore-org/agent-config",
+        "ref": "main"
       }
     }
   },

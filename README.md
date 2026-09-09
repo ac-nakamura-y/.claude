@@ -32,17 +32,24 @@
 
 ## Plugins
 
-`plugins/agent-config` は activecore 社内の Claude Code プラグイン群です。`settings.json` の `extraKnownMarketplaces.activecore` が `./plugins/agent-config` を参照し、`fde@activecore` を有効化しています。
-
-```shell
-/fde:notion2linear
-```
+`plugins/agent-config` は activecore 社内の Claude Code プラグイン群の submodule です。`settings.json` の `extraKnownMarketplaces.activecore` は GitHub の `activecore-org/agent-config` を参照し、`fde@activecore` を有効化しています。
 
 初回 clone 後は submodule を初期化してください。
 
 ```shell
 git submodule update --init plugins/agent-config
 ```
+
+Claude Code で初回利用時は、マーケットプレイスとプラグインを登録してください。
+
+```shell
+/plugin marketplace add activecore-org/agent-config
+/plugin install fde@activecore
+/reload-plugins
+/fde:notion2linear
+```
+
+Cursor では `/fde:notion2linear` は使えません。`skills/notion2linear` は fde プラグインの Skill への symlink なので、会話内でマーケOps-改善項目の Linear 起票を依頼すると読み込まれます。
 
 ## ランタイム artifacts
 
