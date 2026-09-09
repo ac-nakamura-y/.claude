@@ -17,9 +17,12 @@ for name in "${PLUGINS[@]}"; do
     continue
   fi
 
+  # skills は ~/.claude/plugins/cache（Claude Code インストール）から読む。二重登録を避ける。
   rsync -a --delete \
     --exclude '.git' \
+    --exclude 'skills/' \
     "$src/" "$dest/"
+  rm -rf "$dest/skills"
 
   mkdir -p "$dest/.cursor-plugin"
   cp "$src/.claude-plugin/plugin.json" "$dest/.cursor-plugin/plugin.json"
@@ -56,8 +59,6 @@ manifest = dest / ".cursor-plugin" / "plugin.json"
 with open(manifest, encoding="utf-8") as f:
     data = json.load(f)
 
-if (dest / "skills").is_dir():
-    data["skills"] = "./skills/"
 if commands.is_dir():
     data["commands"] = "./commands/"
 if (dest / "hooks" / "hooks.json").is_file():

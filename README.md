@@ -61,7 +61,7 @@ git submodule update --init plugins/agent-config
 
 ### Cursor
 
-Cursor は `/fde:...` 形式のプラグインコマンドを使えません。`scripts/sync-cursor-plugins.sh` で agent-config の各プラグインを `~/.cursor/plugins/local/` に同期し、Skill は `skills/` の symlink から読み込みます。
+Cursor は `/fde:...` 形式のプラグインコマンドを使えません。`scripts/sync-cursor-plugins.sh` で agent-config の各プラグインを `~/.cursor/plugins/local/` に同期します（MCP・commands・hooks のみ。Skill は `~/.claude/plugins/cache` 経由で 1 箇所だけ読み込む）。
 
 ```shell
 git submodule update --init plugins/agent-config
@@ -71,7 +71,7 @@ git submodule update --init plugins/agent-config
 
 | プラグイン | Cursor での利用 |
 | :-- | :-- |
-| fde | Skill `notion2linear`（`skills/notion2linear`）— マーケOps-改善項目の Linear 起票 |
+| fde | Skill `notion2linear` — マーケOps-改善項目の Linear 起票 |
 | ac-monitor | Skill `triage-ladder` + プラグイン MCP（CloudWatch）— 定常監視トリアージ |
 | ops | プラグイン登録のみ（スキル未実装） |
 
