@@ -17,7 +17,6 @@ CHROME_COOKIE_DIRS = (
     Path.home() / "Library/Application Support/Google/Chrome/Profile 1/Cookies",
     Path.home() / "Library/Application Support/Google/Chrome/Default/Cookies",
 )
-NOTION_DB = Path.home() / "Library/Application Support/Notion/notion.db"
 HTTP_TIMEOUT_SEC = 15
 ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 
@@ -52,6 +51,10 @@ def get_user_id() -> str:
 
 def get_space_id() -> str:
     return _require_env("NOTION_SPACE_ID")
+
+
+def get_notion_db() -> Path:
+    return Path(_require_env("NOTION_DB")).expanduser()
 
 
 _load_dotenv()

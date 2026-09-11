@@ -16,7 +16,7 @@ from notion_client import get_token_v2, normalize_page_id, write_property
 def main() -> None:
     parser = argparse.ArgumentParser(description="Set a Notion page property via saveTransactions")
     parser.add_argument("page_id", help="Notion page UUID")
-    parser.add_argument("property_id", help="Property ID (e.g. e~Y{ for Linear column)")
+    parser.add_argument("property_id", help="Notion property ID")
     parser.add_argument("args_json", help="JSON value for the property args field")
     args = parser.parse_args()
 
