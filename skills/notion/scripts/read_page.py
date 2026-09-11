@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from notion_client import NOTION_DB, normalize_page_id
+from notion_client import get_notion_db, normalize_page_id
 
 
 def extract_rich_text(value) -> str:
@@ -97,10 +97,11 @@ def get_text_blocks(
 
 
 def read_page(page_id: str) -> dict:
-    if not NOTION_DB.exists():
-        raise RuntimeError(f"notion.db not found: {NOTION_DB}")
+    notion_db = get_notion_db()
+    if not notion_db.exists():
+        raise RuntimeError(f"notion.db not found: {notion_db}")
 
-    conn = sqlite3.connect(f"file:{NOTION_DB}?mode=ro", uri=True)
+    conn = sqlite3.connect(f"file:{notion_db}?mode=ro", uri=True)
     conn.row_factory = sqlite3.Row
     row = conn.execute(
         "SELECT id, type, properties, content, parent_id, parent_table FROM block WHERE id=?",

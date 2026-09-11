@@ -30,21 +30,22 @@ Skill 同梱の `scripts/` を優先する。都度 Python を書くより、こ
 
 ## Defaults
 
-書き込み API 用の ID はリポジトリに含めない。`skills/notion/.env` またはシェル環境変数で設定する。
+設定値はリポジトリに含めない。`skills/notion/.env` またはシェル環境変数で設定する。
 
 ```bash
 cp ~/.claude/skills/notion/.env.example ~/.claude/skills/notion/.env
-# NOTION_USER_ID / NOTION_SPACE_ID を記入
+# NOTION_USER_ID / NOTION_SPACE_ID を記入。NOTION_DB は example の値をそのまま使える
 ```
 
 | Key | Source |
 | :-- | :-- |
 | `NOTION_USER_ID` | `.env` または環境変数 |
 | `NOTION_SPACE_ID` | `.env` または環境変数 |
-| local db | `~/Library/Application Support/Notion/notion.db` |
-| Linear property id | `e~Y{` |
+| `NOTION_DB` | `.env` または環境変数 |
 
-ID の取得方法: Chrome DevTools の Network タブで Notion API リクエストの `x-notion-active-user-header` と `x-notion-space-id` ヘッダーを参照する。
+`NOTION_USER_ID` と `NOTION_SPACE_ID` の取得方法: Chrome DevTools の Network タブで Notion API リクエストの `x-notion-active-user-header` と `x-notion-space-id` ヘッダーを参照する。
+
+プロパティ ID は DB ごとに異なる。書き込み時は DevTools 等で対象列の ID を調べ、`write_property.py` の第 2 引数に渡す。
 
 Notion URL から page ID を取り出す。例として `https://app.notion.com/p/R3-_-3a73694887fd8014ac9dedb195bcc859` なら page ID は `3a736948-87fd-8014-ac9d-edb195bcc859` である。
 
@@ -68,14 +69,6 @@ pip3 install browser-cookie3
 python3 ~/.claude/skills/notion/scripts/get_token.py
 python3 ~/.claude/skills/notion/scripts/write_property.py \
   <page_id> <property_id> '<json_args>'
-```
-
-Linear URL 列への書き込み例:
-
-```bash
-python3 ~/.claude/skills/notion/scripts/write_property.py \
-  3a736948-87fd-8014-ac9d-edb195bcc859 e~Y{ \
-  '[["https://linear.app/active-core-swat/issue/MRTTOPS-7222", [["a", "https://linear.app/active-core-swat/issue/MRTTOPS-7222"]]]]'
 ```
 
 内部 API のエンドポイントと必須ヘッダーは次のとおり。
@@ -121,7 +114,3 @@ python3 ~/.claude/skills/notion/scripts/write_property.py \
 | Notion デスクトップ Cookie の手動 AES 復号 | 暗号化方式が変わり復号できない |
 | 未設定の `NOTION_API_KEY` | Integration Token が存在しない |
 | 未認証の Notion MCP | Agent 環境から OAuth できない |
-
-## Related Script
-
-Linear URL の一括更新だけを行う用途限定スクリプトは `~/Documents/marutto-operation/scripts/update-notion-linear-links.py` にある。汎用操作は本 Skill の `scripts/` を使う。
