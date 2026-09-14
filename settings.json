@@ -34,8 +34,7 @@
     "yjn279": {
       "source": {
         "source": "github",
-        "repo": "yjn279/trinity",
-        "ref": "main"
+        "repo": "yjn279/trinity"
       }
     },
     "activecore": {
@@ -44,9 +43,22 @@
         "repo": "activecore-org/agent-config",
         "ref": "main"
       }
+    },
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
     }
   },
+  "outputStyle": "Concise",
   "effortLevel": "xhigh",
+  "modelSettings": {
+    "claude-opus-5": {
+      "effortLevel": "high"
+    }
+  },
+  "theme": "auto",
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true
