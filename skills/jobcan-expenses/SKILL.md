@@ -3,7 +3,7 @@ name: jobcan-expenses
 description: Fills the Jobcan 小口経費精算 form with round-trip commute fares for the office days of a month and saves it as a draft. Use when the user asks to file 経費精算, 通勤費, or 交通費 in Jobcan.
 ---
 
-# Jobcan Expense Claim
+# Jobcan Expenses
 
 対象月に出社した日を確定し、ジョブカンの小口経費精算に往復の通勤費として入力して下書き保存する。申請ボタンは押さず、提出はユーザーに委ねる。勤怠の打刻修正、有給申請、シフト申請そのものは扱わない。
 
