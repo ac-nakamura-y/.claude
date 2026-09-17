@@ -30,13 +30,13 @@
 フォールバックはエラーを隠蔽し、処理を複雑にする原因となる。エラーを握りつぶして代替値で処理を続けるのではなく、問題が起きた事実をそのまま表面化させる。
 エラーを出力することを恐れない。早期に、明示的に失敗させることで、原因は隠れず、処理は単純に保たれる。
 
-## Skills
+## Gotchas
+
+advisor 機能は積極的に利用する。特に、作業に入る前・行き詰まったとき・悩んでいるとき・方針を変えるとき・作業を完了したときなどに助言を求める。
 
 作業を行う際は、そのタスクに関連する Skill を必ず確認し、適用する。
 
-### `/playwright-cli`
-
-`attach --cdp=chrome` でログイン済みの Chrome ブラウザに接続し、`playwright-cli tab-new` で新しいタブを開いて作業する。
+- `/playwright-cli` : `attach --cdp=chrome` でログイン済みの Chrome ブラウザに接続し、 `playwright-cli tab-new` で新しいタブを開いて作業する。
 
 Skill および Agent 向けの設定資産（Skill、ルール、フック等）は `~/.claude/` 配下で管理する。`~/.cursor/` 配下には新規作成しない。Skill を追加・更新するときは `~/.claude/skills/<skill-name>/SKILL.md` を編集し、必要に応じて同ディレクトリ内に reference ファイルを置く。
 
