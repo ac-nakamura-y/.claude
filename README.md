@@ -51,21 +51,25 @@ git submodule update --init plugins/agent-config
 
 ### Claude Code
 
-`fde` / `ops` / `ac-monitor` の 3 つを利用する。初回はマーケットプレイスとプラグインを登録する。
+`fde` / `ops` / `ac-monitor` / `logistics` の 4 つを利用する。初回はマーケットプレイスとプラグインを登録する。
 
 ```shell
 /plugin marketplace add activecore-org/agent-config
 /plugin install fde@activecore
 /plugin install ops@activecore
 /plugin install ac-monitor@activecore
+/plugin install logistics@activecore
 /reload-plugins
 ```
 
-| プラグイン | スラッシュコマンド |
-| :-- | :-- |
-| `fde` | `/fde:notion2linear` |
-| `ac-monitor` | `/ac-monitor:triage` |
-| `ops` | なし（スキル未実装） |
+agent-config の変更を取り込むときは、マーケットプレイスを更新してから各プラグインを更新する。収録している Skill とコマンドは [agent-config](https://github.com/activecore-org/agent-config) の各プラグインの README にまとまっている。
+
+```shell
+claude plugin marketplace update activecore
+claude plugin update fde@activecore
+```
+
+`logistics` の `notion` Skill は、Notion のユーザー ID とワークスペース ID を Skill ディレクトリの `.env` から読む。プラグインはバージョンごとのディレクトリに入るため、 `logistics` を更新したあとは `~/.claude/plugins/cache/activecore/logistics/<version>/skills/notion/.env` を置き直す。
 
 ### Cursor
 
@@ -78,9 +82,9 @@ Cursor は `/fde:...` 形式のプラグインコマンドを扱えないため�
 
 | プラグイン | Cursor での利用 |
 | :-- | :-- |
-| `fde` | Skill `notion2linear` — マーケOps-改善項目の Linear 起票 |
-| `ac-monitor` | Skill `triage-ladder` と CloudWatch MCP — 定常監視のトリアージ |
-| `ops` | プラグイン登録のみ（スキル未実装） |
+| `fde` | Skill |
+| `ops` | Skill |
+| `ac-monitor` | Skill、 `triage` コマンド、フック、CloudWatch MCP |
 
 ## Runtime
 

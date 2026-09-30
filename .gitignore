@@ -18,6 +18,7 @@ plugins/known_marketplaces.json
 plugins/installed_plugins.json
 plugins/marketplaces/
 plugins/.last_inuse_sweep
+plugins/.install-manifests/
 
 # macOS
 .DS_Store
