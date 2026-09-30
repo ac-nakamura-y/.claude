@@ -26,9 +26,11 @@
     "claude-code-setup@claude-plugins-official": true,
     "example-skills@anthropic-agent-skills": true,
     "trinity@yjn279": true,
+    "eli5@claude-community": true,
     "fde@activecore": true,
     "ops@activecore": true,
-    "ac-monitor@activecore": true
+    "ac-monitor@activecore": true,
+    "logistics@activecore": true
   },
   "extraKnownMarketplaces": {
     "yjn279": {
@@ -37,17 +39,22 @@
         "repo": "yjn279/trinity"
       }
     },
-    "activecore": {
-      "source": {
-        "source": "github",
-        "repo": "activecore-org/agent-config",
-        "ref": "main"
-      }
-    },
     "claude-plugins-official": {
       "source": {
         "source": "github",
         "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    "claude-community": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/anthropics/claude-plugins-community.git"
+      }
+    },
+    "activecore": {
+      "source": {
+        "source": "github",
+        "repo": "activecore-org/agent-config"
       }
     }
   },
@@ -58,9 +65,9 @@
       "effortLevel": "high"
     }
   },
+  "advisorModel": "fable",
   "theme": "auto",
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
-  "skipAutoPermissionPrompt": true,
-  "advisorModel": "fable"
+  "skipAutoPermissionPrompt": true
 }
