@@ -36,7 +36,6 @@
 | `jobcan-expenses` | このリポジトリ | ジョブカンの小口経費精算に通勤費を入力する |
 | `linear` | このリポジトリ | Linear Issue の起票 |
 | `markdown` | このリポジトリ | Markdown とそれに準じた記法 |
-| `notion` | このリポジトリ | Notion ページとデータベースの読み書き |
 | `playwright-cli` | このリポジトリ | ブラウザ操作と Web ページのテスト |
 | `pr-stats` | このリポジトリ | Pull Request の週次集計 |
 | `product-management` | このリポジトリ | 価値提供の指標と、作らずに済ませる判断 |
