@@ -39,6 +39,7 @@
 | `playwright-cli` | このリポジトリ | ブラウザ操作と Web ページのテスト |
 | `pr-stats` | このリポジトリ | Pull Request の週次集計 |
 | `product-management` | このリポジトリ | 価値提供の指標と、作らずに済ませる判断 |
+| `slide-story` | このリポジトリ | スライドの物語と情報構造の作成・レビュー |
 
 ## Plugins
 
