@@ -30,7 +30,8 @@
     "fde@activecore": true,
     "ops@activecore": true,
     "ac-monitor@activecore": true,
-    "logistics@activecore": true
+    "logistics@activecore": true,
+    "batb@batb": true
   },
   "extraKnownMarketplaces": {
     "yjn279": {
@@ -55,6 +56,12 @@
       "source": {
         "source": "github",
         "repo": "activecore-org/agent-config"
+      }
+    },
+    "batb": {
+      "source": {
+        "source": "github",
+        "repo": "ac-nakamura-y/batb"
       }
     }
   },

@@ -50,7 +50,7 @@ git submodule update --init plugins/agent-config
 
 ### Claude Code
 
-`fde` / `ops` / `ac-monitor` / `logistics` の 4 つを利用する。初回はマーケットプレイスとプラグインを登録する。
+agent-config からは `fde` / `ops` / `ac-monitor` / `logistics` の 4 つを利用する。初回はマーケットプレイスとプラグインを登録する。
 
 ```shell
 /plugin marketplace add activecore-org/agent-config
@@ -69,6 +69,21 @@ claude plugin update fde@activecore
 ```
 
 `logistics` の `notion` Skill は、Notion のユーザー ID とワークスペース ID を Skill ディレクトリの `.env` から読む。プラグインはバージョンごとのディレクトリに入るため、 `logistics` を更新したあとは `~/.claude/plugins/cache/activecore/logistics/<version>/skills/notion/.env` を置き直す。
+
+BatB の Lumiere（会議・チャット・ドキュメントの所在の索引）を使うプラグイン `batb` は、private リポジトリ ac-nakamura-y/batb をマーケットプレイス `batb` として取り込む。プラグインの Skill `batb:lumiere` は `~/batb/bin/batb` を呼ぶため、BatB を `~/batb` に clone しておく。初回はマーケットプレイスとプラグインを登録する。
+
+```shell
+/plugin marketplace add ac-nakamura-y/batb
+/plugin install batb@batb
+/reload-plugins
+```
+
+BatB の変更を取り込むときは、マーケットプレイスを更新してからプラグインを更新する。
+
+```shell
+claude plugin marketplace update batb
+claude plugin update batb@batb
+```
 
 ### Cursor
 
