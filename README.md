@@ -35,6 +35,7 @@
 | `imagegen` | このリポジトリ | 画像の生成と編集 |
 | `jobcan-expenses` | このリポジトリ | ジョブカンの小口経費精算に通勤費を入力する |
 | `linear` | このリポジトリ | Linear Issue の起票 |
+| `lumiere` | このリポジトリ | BatB の Lumiere で資料を検索し、共有された資料を登録する |
 | `markdown` | このリポジトリ | Markdown とそれに準じた記法 |
 | `playwright-cli` | このリポジトリ | ブラウザ操作と Web ページのテスト |
 | `pr-stats` | このリポジトリ | Pull Request の週次集計 |
