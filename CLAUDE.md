@@ -93,23 +93,15 @@ flowchart LR
 
 ## Notion Operations
 
-Notion MCP は未認証のことが多い。DB の読み書きは Chrome の cookie を使った Notion 内部 API で行う。ローカル DB（ `~/Library/Application Support/Notion/notion.db` ）はキャッシュのため、書き込み前の状態確認には使わない。
+Notion の読み書きは、Notion の公式 API で行う。手順とスクリプトは Skill `logistics:notion` を参照する。
 
-### Read
-
-最新の DB 状態は `queryCollection` で取得する。認証には Chrome Profile 3 の `token_v2` を `browser_cookie3` から取得する。プロパティは `block.value.value.properties` にネストされている。
-
-### Write
-
-DB プロパティの更新は `saveTransactions` を使う。Linear 列など特定プロパティだけを更新するときは、 `path` + `set` でその列のみ指定する。 `properties` 全体を `update` するとステータスなど他列が消えるため、使わない。
+認証にはインテグレーションのトークンを使い、`~/.config/notion/token` に置く。インテグレーションは接続したページと DB にしか触れないため、新しく扱う DB には Notion の「⋯」→「接続」で追加する。
 
 | 操作 | 方法 |
 | :-- | :-- |
-| Linear 列の更新 | `path: ["properties", "e~Y{"]` + `command: "set"` |
+| DB の検索 | `query.py <data_source_id> '<filter_json>'` |
+| プロパティの更新 | `write_property.py <page> '<properties_json>'`（表示名で指定し、指定しない列は変わらない） |
+| 行の追加 | `create_row.py <data_source_id> '<properties_json>'` |
 | ステータス列の更新 | ユーザー明示指示がある場合のみ |
 
-更新用スクリプトは `~/Documents/marutto-operation/scripts/update-notion-linear-links.py` に置く。
-
-### Browser
-
-Notion の UI 操作が必要な場合は `playwright-cli` を使う。ログイン済み Chrome への接続は `attach --cdp=chrome` を試すが、リモートデバッグ未有効時は API 更新に切り替える。Chrome cookie 経由の API 更新が UI 操作より確実である。
+公式 API にはページの複製がない。決まった形のページは DB のテンプレートから作る。
