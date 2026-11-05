@@ -13,6 +13,10 @@
 !/skills/
 !/plugins/
 !/plugins/agent-config
+!/scheduled-tasks/
+/scheduled-tasks/*
+!/scheduled-tasks/fde-dashboard/
+/scheduled-tasks/fde-dashboard/*.html
 plugins/cache/
 plugins/known_marketplaces.json
 plugins/installed_plugins.json
