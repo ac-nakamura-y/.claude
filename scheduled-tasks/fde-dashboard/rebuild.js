@@ -185,7 +185,6 @@ svg text.mono{font-family:var(--mono)}
 .due .rest{display:block;color:var(--muted);font-weight:700;cursor:help}
 .pcard .ph{display:flex;gap:6px;align-items:flex-start}
 .pcard .ph .st{flex:none}
-.pcard .ph .ptag{margin:1px 0 0 auto;flex:none;padding:0 5px;border:1.5px dashed var(--ink);border-radius:3px;background:var(--surface-2);color:var(--ink);font-size:var(--fs-small);font-weight:700;line-height:15px}
 .pcard h3{font-size:var(--fs-body);font-weight:700;line-height:20px}
 .pcard h3 a,.due .dn{color:inherit;text-decoration:none}
 .pcard h3 a:hover,.due .dn:hover{text-decoration:underline}
@@ -263,15 +262,16 @@ function progressOf(p){
     overdue:!!p.target&&p.target<LINEAR_PROJECTS_AS_OF,
     msOver:p.ms.filter(m=>m[1]&&m[1]<LINEAR_PROJECTS_AS_OF&&m[2]<100)};
 }
-// 状態（メンバーごと）：Off track＝目標日か、100% でないマイルストーンの日付を過ぎた（完了したプロジェクトはカードに出さない）。At risk＝本人の期限超過 Issue がある、Backlog 以外でマイルストーンなし、In Progress で Issue なし。ほかは On track
-const STATUS={onTrack:["On track","☀️"],atRisk:["At risk","☁️"],offTrack:["Off track","☔️"]};
+// 状態（メンバーごと）：Backlog＝着手前で判定しない。Off track＝目標日か、100% でないマイルストーンの日付を過ぎた（完了したプロジェクトはカードに出さない）。At risk＝本人の期限超過 Issue がある、マイルストーンなし、In Progress で Issue なし。ほかは On track
+const STATUS={onTrack:["On track","☀️"],atRisk:["At risk","☁️"],offTrack:["Off track","☔️"],backlog:["Backlog","🌙"]};
 const PT={offTrack:3,atRisk:2,onTrack:1};
 function statusOf(p,g,m){
+  if(p.state==="backlog")return {k:"backlog",why:["着手前のため判定しない"]};
   const off=[],risk=[],over=mine(p,m).filter(r=>r[2]<LINEAR_PROJECTS_AS_OF).length;
   if(g.overdue)off.push("目標日 "+mdOf(p.target)+" を過ぎた");
   g.msOver.forEach(x=>off.push("マイルストーン「"+x[0]+"」の "+mdOf(x[1])+" を過ぎた（"+x[2]+"%）"));
   if(over)risk.push(m.name+" の期限超過 Issue "+over+" 件");
-  if(p.state!=="backlog"&&!p.ms.length)risk.push("マイルストーンなし");
+  if(!p.ms.length)risk.push("マイルストーンなし");
   if(p.state==="started"&&!p.iss.length)risk.push("Issue なし");
   return off.length?{k:"offTrack",why:off}:risk.length?{k:"atRisk",why:risk}:{k:"onTrack",why:[]};
 }
@@ -324,10 +324,10 @@ function didDo3(m){
 // 迷い・判断の振り返り：取り込んだ日の Do³ の日次で本人が書いた原文。書いていないときは「記載なし」、その日に Do³ を書いていなければ「Do³ 実施なし」
 const warnBox=x=>'<div class="warn"><div class="warn-h">迷い・判断の振り返り<em>'+esc(x.d)+'</em></div><p title="'+esc(x.text)+'">'+esc(x.text)+"</p></div>";
 const warn=m=>{if(m.doubt&&m.doubt.d!==mdOf(LINEAR_PROJECTS_AS_OF))throw new Error(m.id+": 迷い・判断が取り込んだ日のものでない "+m.doubt.d);return m.doubt?warnBox(m.doubt):'<div class="warn empty"><div class="warn-h">迷い・判断の振り返り</div>'+none(didDo3(m)?"記載なし":"Do<sup>3</sup> 実施なし")+"</div>";};
-// 名前の前の天気：担当プロジェクトの状態を ☀️ 1・☁️ 2・☔️ 3 pt として平均し、3 段階で出す（[この値以上, 天気]）
+// 名前の前の天気：Backlog を除く担当プロジェクトの状態を ☀️ 1・☁️ 2・☔️ 3 pt として平均し、3 段階で出す（[この値以上, 天気]）
 const NAME_WX=[[2.5,"☔️"],[2,"☁️"],[-Infinity,"☀️"]];
 function headOf(m){
-  const ss=cardProjects(m).map(p=>statusOf(p,progressOf(p),m));
+  const ss=cardProjects(m).filter(p=>!inBacklog(p)).map(p=>statusOf(p,progressOf(p),m));
   if(!ss.length)return '<div class="card-head"><h3>'+esc(m.name)+"</h3></div>";
   const n=k=>ss.filter(x=>x.k===k).length,avg=ss.reduce((a,x)=>a+PT[x.k],0)/ss.length,wx=NAME_WX.find(([x])=>avg>=x)[1];
   const tip="<b>"+esc(m.name)+"</b>担当プロジェクトの平均 "+avg.toFixed(2)+" pt（☀️ 1・☁️ 2・☔️ 3）<br>Off track "+n("offTrack")+"・At risk "+n("atRisk")+"・On track "+n("onTrack");
@@ -342,9 +342,9 @@ function sampleCard(){
   return '<article class="card box sample"><div class="card-head">'+stat("atRisk")+"<h3>サンプル</h3></div>"
     +pcap(bar([[0,38],[1,6],[2,8],[3,10]],[],55),"10/1","12/25",.55)
     +'<dl class="gl">'
-    +"<dt>Health</dt><dd>"+rule("offTrack","目標日か、未完了 MS の日付を過ぎた")+rule("atRisk","担当 Issue の期限超過か、必須項目がない")+rule("onTrack","どちらでもない")+"</dd>"
+    +"<dt>Health</dt><dd>"+rule("offTrack","目標日か、未完了 MS の日付を過ぎた")+rule("atRisk","担当 Issue の期限超過か、必須項目がない")+rule("onTrack","どちらでもない")+rule("backlog","着手前のため判定しない")+"</dd>"
     +"<dt>必須項目（Backlog はなし）</dt><dd>"+nw("<b>Planned</b> MS")+nw("<b>In Progress</b> MS・Issue")+"</dd>"
-    +"<dt>名前の天気</dt><dd>"+ln("担当 PJ の Health の平均（☀️ 1・☁️ 2・☔️ 3 pt）")+NAME_WX.map(([x,w],i)=>nw(w+" "+(i<NAME_WX.length-1?x.toFixed(1)+" 以上":NAME_WX[i-1][0].toFixed(1)+" 未満"))).join("")+"</dd>"
+    +"<dt>名前の天気</dt><dd>"+ln("Backlog を除く担当 PJ の Health の平均（☀️ 1・☁️ 2・☔️ 3 pt）")+NAME_WX.map(([x,w],i)=>nw(w+" "+(i<NAME_WX.length-1?x.toFixed(1)+" 以上":NAME_WX[i-1][0].toFixed(1)+" 未満"))).join("")+"</dd>"
     +"<dt>Issue</dt><dd>"+sw(0,"Done")+sw(1,"In Customer")+sw(2,"In Review")+sw(3,"In Progress")+sw(5,"Others")+"</dd>"
     +"</dl></article>";
 }
@@ -414,11 +414,11 @@ function nextMs(p){
   if(!x)return '<div class="nm">次の MS <b>なし</b></div>';
   return '<div class="nm'+(x[1]&&x[1]<LINEAR_PROJECTS_AS_OF?" late":"")+'" title="'+esc(x[0])+'">次の MS <b>'+esc(x[0])+"</b>"+(x[1]?'<span class="mono">'+mdOf(x[1])+"</span>":"")+"</div>";
 }
-// プロジェクトのカード：状態・名前（Backlog はラベル付き）・担当・期間・次のマイルストーン・バーと、本人の本日期限・期限超過の Issue
+// プロジェクトのカード：状態・名前・担当・期間・次のマイルストーン・バーと、本人の本日期限・期限超過の Issue
 function pcard(m,p){
   const g=progressOf(p),st=statusOf(p,g,m);
   return '<article class="pcard box">'
-    +'<div class="ph">'+stat(st.k,statusTip(st))+'<h3><a href="'+esc(p.url)+'" target="_blank" rel="noopener">'+esc(p.name)+"</a></h3>"+(inBacklog(p)?'<span class="ptag">Backlog</span>':"")+'</div><div class="pm">担当 <b>'+p.owners.map(id=>short(MEMBER[id])).join("・")+'</b>｜<span class="mono">'+esc(period(p))+"</span>｜"+g.total+" pt</div>"+nextMs(p)+pbar(p,g)+dueList(p,m)+"</article>";
+    +'<div class="ph">'+stat(st.k,statusTip(st))+'<h3><a href="'+esc(p.url)+'" target="_blank" rel="noopener">'+esc(p.name)+'</a></h3></div><div class="pm">担当 <b>'+p.owners.map(id=>short(MEMBER[id])).join("・")+'</b>｜<span class="mono">'+esc(period(p))+"</span>｜"+g.total+" pt</div>"+nextMs(p)+pbar(p,g)+dueList(p,m)+"</article>";
 }
 const cards=(m,later)=>cardProjects(m).filter(p=>inBacklog(p)===later).map(p=>pcard(m,p)).join("");
 function memberView(m){
