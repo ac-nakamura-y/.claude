@@ -1,6 +1,6 @@
 ---
-name: elixir-teirei-junbi
-description: 資生堂エリクシール PoC の会議を Notion の議事録 DB（marutto_議事録）に1会議1ページで記録する。クライアント定例の結果をまとめるラップアップのページ、水曜の AC内部定例と木曜の BP内部定例（marutto内部定例）のアジェンダ、会議後の決定事項と TODO を、Slack と Drive の議事メモと定例資料から、実行者に確認せず Notion に作り切る。「ラップアップの準備」「ラップアップの議事録」「AC内部定例の準備」「BP内部定例のアジェンダ」「marutto内部定例」「定例後の決定事項をまとめて」「エリクシールの定例準備」と言われたときや、資生堂 PoC の定例議事メモの Slack リンクを渡されたときは、必ずこのスキルを使う。議事録をコピペ用の Markdown としてチャットに出すだけなら ops:shiseido-minutes、SABON など他クライアントの定例には使わない。
+name: elixir-meeting-notes
+description: Records each meeting of the 資生堂 エリクシール PoC as one page in the Notion minutes database marutto_議事録. Builds the wrap-up page from the client 定例, the agendas for the Wednesday AC内部定例 and the Thursday BP内部定例 (marutto内部定例), and the decisions and TODOs after each meeting, from the 議事メモ and 定例資料 in Slack and Drive, without stopping to ask the user. Use whenever the user asks for 「ラップアップの準備」「ラップアップの議事録」「AC内部定例の準備」「BP内部定例のアジェンダ」「marutto内部定例」「定例後の決定事項をまとめて」「エリクシールの定例準備」, or shares a Slack link to a 資生堂 PoC 定例議事メモ. Not for copy-paste Markdown minutes in chat (ops:shiseido-minutes) or for other clients such as SABON.
 ---
 
 # Elixir Meeting Notes

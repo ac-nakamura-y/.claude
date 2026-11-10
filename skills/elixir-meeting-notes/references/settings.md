@@ -1,6 +1,6 @@
 # Settings
 
-エリクシール定例スキルが参照する固定値をまとめる。メンバー・会議名・材料の置き場所が変わったら、このファイルを直す。Notion の議事録 DB（marutto_議事録）の ID、カテゴリ、参加者に入れられる人は、 `scripts/notion_minutes.py` の先頭の定数で直す。
+このスキルが参照する固定値をまとめる。メンバー・会議名・材料の置き場所が変わったら、このファイルを直す。Notion の議事録 DB（marutto_議事録）の ID、カテゴリ、参加者に入れられる人は、 `scripts/notion_minutes.py` の先頭の定数で直す。
 
 ## Sources
 
