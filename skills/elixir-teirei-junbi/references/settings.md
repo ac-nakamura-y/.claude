@@ -1,17 +1,16 @@
 # Settings
 
-エリクシール定例スキルが参照する固定値をまとめる。メンバー・会議名・材料の置き場所が変わったら、このファイルを直す。
+エリクシール定例スキルが参照する固定値をまとめる。メンバー・会議名・材料の置き場所が変わったら、このファイルを直す。Notion の議事録 DB（marutto_議事録）の ID、カテゴリ、参加者に入れられる人は、 `scripts/notion_minutes.py` の先頭の定数で直す。
 
 ## Sources
 
-会議の材料は Google Drive と Slack にあり、議事録は Notion に書く。置き場所と ID を以下に示す。
+会議の材料は Google Drive と Slack にある。置き場所と ID を以下に示す。
 
 | 用途 | 置き場所 | ID |
 | :-- | :-- | :-- |
 | 定例資料 | Drive `01_会議資料/02_定例資料` | `1UzfcBMcH8hP4FZkA9QaYf8Y2wqTigb8l` |
 | Gemini 議事メモ・文字起こし | Drive `01_会議資料/99_議事録` | `1Y1EkJEojeyTgCAqtQE2S0SLFI1iVzeu6` |
 | クライアント定例の議事メモ | Slack チャンネル | `C0AJSBBGTFW` |
-| 議事録 DB（marutto_議事録） | Notion data source | `abeba0ce-266d-4d57-9684-05cf19f6bbb0` |
 
 定例資料のファイル名は `資生堂ジャパン株式会社様_定例会議資料_YYMMDD` で、拡張子なし・ `.pptx` ・ `.pptx.pptx` が混在する。クライアント定例の議事メモは、正者さんが定例のあと Slack に `YYYYMMDD_shiseido_poc_teireikai-minutes_vN.html` として投稿する。HTML の前半は要約、後半の「文字起こし詳細」は `M:SS` のタイムスタンプ付きの発言録である。
 
@@ -26,8 +25,6 @@
 | AC内部定例 | 水 12:00 | AC | `[資生堂] AC内部定例` | `YYYYMMDD_エリクシールAC内部定例_議事メモ` |
 | BP内部定例 | 木 | AC・BP | `[資生堂] marutto内部定例` | `YYYYMMDD_エリクシールmarutto内部定例_議事メモ` |
 | 制作定期MTG | 月か火 | 未確認 | （ページを作らない） | タイトルに `制作定期MTG` を含むもの |
-
-Notion のページは `カテゴリ` を `資生堂様PJ` にする。 `参加者` に入れられるのは、 `scripts/notion_minutes.py` の `MEMBERS` にある AC の4人（原嶋・正者・中村・榎本）である。
 
 ## Members
 

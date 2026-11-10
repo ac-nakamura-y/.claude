@@ -6,10 +6,14 @@ Usage:
   notion_minutes.py create <会議名> <YYYY-MM-DD> <markdown_file> [--people 原嶋,正者] [--source URL] [--dry-run]
   notion_minutes.py append <page> <markdown_file> [--people 原嶋,正者] [--dry-run]
 
+find --on returns the pages dated on that day and the same-named pages created
+within 3 days of it, which catches a page someone made with the wrong date.
+
 The markdown is a small subset that maps one-to-one to Notion blocks:
   "## " heading_2, "### " heading_3, "- " bullet, "1. " numbered,
   "- [ ] " / "- [x] " to_do, any other line a paragraph.
 Two spaces of indentation make a line the child of the line above it.
+Headings take no children, and inline bold or code is rejected.
 """
 
 from __future__ import annotations
@@ -20,6 +24,7 @@ import re
 import sys
 import urllib.error
 import urllib.request
+from datetime import date, timedelta
 from pathlib import Path
 
 API = "https://api.notion.com/v1/"
@@ -36,6 +41,7 @@ MEMBERS = {
 MAX_TEXT = 2000
 MAX_BATCH = 100
 MAX_DEPTH = 2
+NEAR_DAYS = 3
 
 
 def api(method: str, path: str, body: dict | None = None) -> dict:
@@ -66,14 +72,14 @@ def page_id(value: str) -> str:
 
 
 def rich_text(text: str) -> list[dict]:
-    return [{"type": "text", "text": {"content": text[i:i + MAX_TEXT]}} for i in range(0, len(text), MAX_TEXT)] or []
+    return [{"type": "text", "text": {"content": text[i:i + MAX_TEXT]}} for i in range(0, len(text), MAX_TEXT)]
 
 
 def parse_line(content: str) -> dict:
     patterns = [
         (r"## (.+)", lambda m: ("heading_2", {"rich_text": rich_text(m[1])})),
         (r"### (.+)", lambda m: ("heading_3", {"rich_text": rich_text(m[1])})),
-        (r"- \[( |x)\] (.+)", lambda m: ("to_do", {"rich_text": rich_text(m[2]), "checked": m[1] == "x"})),
+        (r"- \[( |x|X)\] (.+)", lambda m: ("to_do", {"rich_text": rich_text(m[2]), "checked": m[1] != " "})),
         (r"- (.+)", lambda m: ("bulleted_list_item", {"rich_text": rich_text(m[1])})),
         (r"\d+\. (.+)", lambda m: ("numbered_list_item", {"rich_text": rich_text(m[1])})),
     ]
@@ -97,12 +103,16 @@ def to_blocks(markdown: str) -> list[dict]:
         depth = indent // 2
         if depth > len(stack) or depth > MAX_DEPTH:
             raise SystemExit(f"{number} 行目: 親のない行か、{MAX_DEPTH} 段より深い入れ子")
+        if "**" in line or "`" in line:
+            raise SystemExit(f"{number} 行目: 太字やコードの記法は使えない")
         block = parse_line(line.strip())
         if block["type"].startswith("heading") and depth:
             raise SystemExit(f"{number} 行目: 見出しは入れ子にできない")
         del stack[depth:]
         if depth:
             parent = stack[-1]
+            if parent["type"].startswith("heading"):
+                raise SystemExit(f"{number} 行目: 見出しの下に入れ子はできない")
             parent[parent["type"]].setdefault("children", []).append(block)
         else:
             roots.append(block)
@@ -149,10 +159,16 @@ def render(block_id: str, depth: int = 0) -> list[str]:
 
 
 def find(name: str, on: str | None, before: str | None) -> list[dict]:
-    date_filter = {"equals": on} if on else {"before": before}
+    title = {"property": "会議名", "title": {"equals": name}}
+    if on:
+        day, near = date.fromisoformat(on), timedelta(days=NEAR_DAYS)
+        created = [{"timestamp": "created_time", "created_time": {"on_or_after": (day - near).isoformat()}},
+                   {"timestamp": "created_time", "created_time": {"on_or_before": (day + near).isoformat()}}]
+        query = {"or": [{"and": [title, {"property": "日時", "date": {"equals": on}}]}, {"and": [title, *created]}]}
+    else:
+        query = {"and": [title, {"property": "日時", "date": {"before": before}}]}
     body = {
-        "filter": {"and": [{"property": "会議名", "title": {"equals": name}},
-                           {"property": "日時", "date": date_filter}]},
+        "filter": query,
         "sorts": [{"property": "日時", "direction": "descending"}],
         "page_size": 5,
     }
