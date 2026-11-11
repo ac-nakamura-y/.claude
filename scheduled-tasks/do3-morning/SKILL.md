@@ -109,19 +109,19 @@ Linear の `list_issues` を `assignee: me` で、 `state` を `started` と `un
 2. `claude agents --json` で、 `kind` が `background` で、 `name` が Issue の ID か項目の名前を含むセッションを、状態を問わず探す。見つかった項目は新たに始めない
 3. 残りの項目ごとに、[Brief](#brief) のとおり指示のファイルをこの実行の scratchpad に書き、承認の表で示したフォルダで次のコマンドを実行する
 
-`--remote-control` で、Claude Desktop のサイドバー、claude.ai/code、スマホから開けるようにする。Git のリポジトリでは `-w` で名前を自動で付けた worktree を作り、本体のブランチや変更に触れないようにする。
+`--remote-control` で、Claude Desktop のサイドバー、claude.ai/code、スマホから開けるようにする。モデルは Opus 5.5（ `claude-opus-5-5` ）、effort は `xhigh` にする。別名の `opus` は Opus 5 で始まるため使わない。Git のリポジトリでは `-w` で名前を自動で付けた worktree を作り、本体のブランチや変更に触れないようにする。
 
 「このコンピューター」は、Claude Desktop がフォルダを指定しないセッションに使う置き場である。 `~/Library/Application Support/Claude/scratch-workspaces/4e1795b5-fd40-46bf-b0ee-c2ab9e8f762b/e56be690-54d3-4900-8fac-2d99cf8625c5/` に `scratch-<YYYY-MM-DD>-<16 進 6 桁>` のフォルダを作り、 `-w` を付けずに始める。このセッションは、サイドバーで「Remote Control」の下に並ぶ。
 
 ```bash
-cd "<フォルダ>" && claude --bg --remote-control "<名前>" -w -n "<名前>" --permission-mode auto "$(cat <指示のファイル>)"
+cd "<フォルダ>" && claude --bg --remote-control "<名前>" -w -n "<名前>" --model claude-opus-5-5 --effort xhigh --permission-mode auto "$(cat <指示のファイル>)"
 ```
 
 出力の `backgrounded · <id> · <名前>` の `<id>` が、セッションを開いたり消したりするときの値である。
 
 ### Brief
 
-次をこのまま書き、 `<>` を埋める。スレッドの permalink は、検索結果の `Permalink` から `?` 以降を除いたものである。Issue のない項目は、Issue の行を除く。
+次をこのまま書き、 `<>` を埋める。スレッドの permalink は、検索結果の `Permalink` から `?` 以降を除いたものである。Issue のない項目は、Issue の行と手順の 3 を除き、手順の番号を詰める。
 
 ```markdown
 <名前> に取り組む。このセッションは、利用者が Do³ のスレッドで今日の予定に挙げた作業として、定期タスク do3-morning が始めた。
@@ -133,8 +133,9 @@ cd "<フォルダ>" && claude --bg --remote-control "<名前>" -w -n "<名前>" 
 
 1. 上のリンク先と、そこから辿れる資料を読み、今日どこまで進めるかを決める。進め方や完了の条件が読み取れないときは、推測で進めずに利用者に聞く
 2. 作業に関わる Skill を確かめ、それに従って進める
-3. Slack・Linear・GitHub・Notion・Google Drive など他の人が見る場所に書き込む前と、Issue の状態を変える前に、全文と書き込み先を利用者に示す。利用者がはっきり同意するまで書き込まない
-4. 区切りがついたら、成果物の所在と残りの作業を利用者に報告する
+3. 決めたこととその理由、参照した資料、置いた仮定、利用者から聞いたことなど、作業の前提が分かったら、その都度 Issue のコメントに書く。確認は要らない。人の名前には `@` を付けず、メンションしない
+4. 他の人をメンションして伝える前、Issue の説明や状態を変える前、Slack・GitHub・Notion・Google Drive など他の人が見る場所に書き込む前は、全文と書き込み先を利用者に示し、利用者がはっきり同意するまで書き込まない
+5. 区切りがついたら、成果物の所在と残りの作業を利用者に報告する
 ```
 
 ### Report
