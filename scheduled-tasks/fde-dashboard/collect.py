@@ -56,7 +56,7 @@ def pct(v):
     if not re.fullmatch(r"\d+(\.\d+)?%", str(v)): sys.exit(f"マイルストーンの進み具合の形が不正: {v!r}")
     return float(v[:-1])
 
-proj = {}
+proj, projects_by_id = {}, {p["id"]: p for p in projects["projects"]}
 for p in projects["projects"]:
     proj[p["id"]] = {
         "uuid": p["uuid"], "url": p["url"], "sortOrder": p["sortOrder"], "name": p["name"], "state": p["status"]["type"],
@@ -80,6 +80,15 @@ for k in active:
         if not r["hasNextPage"]: break
         cur = r["cursor"]
     issues[k] = list(rows.values())
+
+# ---- マイルストーン：Issue がすべて閉じていれば（完了か取り消しで、完了が 1 件以上）100% とする。Linear の進み具合は、一覧に出ない Issue も数えて 100% に届かないことがある
+for k in active:
+    sts = {}
+    for x in issues[k]:
+        if x["projectMilestone"]: sts.setdefault(x["projectMilestone"]["id"], set()).add(x["statusType"])
+    for m, ms in zip(projects_by_id[k]["milestones"], proj[k]["ms"]):
+        s = sts.get(m["id"], set())
+        if "completed" in s and s <= {"completed", "canceled"}: ms[2] = 100.0
 
 def row(x):
     e = x["estimate"]
