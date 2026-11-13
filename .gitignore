@@ -18,6 +18,7 @@
 !/scheduled-tasks/fde-dashboard/
 /scheduled-tasks/fde-dashboard/*.html
 !/scheduled-tasks/do3-morning/
+!/scheduled-tasks/auto-review/
 plugins/cache/
 plugins/known_marketplaces.json
 plugins/installed_plugins.json

@@ -15,6 +15,7 @@
 ├── plugins/
 │   └── agent-config/           # サブモジュール → activecore-org/agent-config
 ├── skills/                     # Skill 群
+├── scheduled-tasks/            # Claude Desktop の定期タスクのプロンプト（auto-review・do3-morning・fde-dashboard）
 ├── scripts/
 │   ├── fable-advice/           # 会話が要約されたあと Fable に問いかけを求めるフックの実行ファイル
 │   └── sync-cursor-plugins.sh  # agent-config の各プラグインを Cursor へ同期する
@@ -39,6 +40,7 @@
 | `playwright-cli` | このリポジトリ | ブラウザ操作と Web ページのテスト |
 | `pr-stats` | このリポジトリ | Pull Request の週次集計 |
 | `product-management` | このリポジトリ | 価値提供の指標と、作らずに済ませる判断 |
+| `session-kickoff` | このリポジトリ | 作業ごとに背景セッションを始め、返事を待つ間も止まらないよう固定する |
 
 ## Plugins
 

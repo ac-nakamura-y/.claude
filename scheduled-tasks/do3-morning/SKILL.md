@@ -85,11 +85,11 @@ Linear の `list_issues` を `assignee: me` で、 `state` を `started` と `un
 
 ## Kickoff
 
-本人が今日の予定を送ったら、改めて確認せずに、スレッドを読み直して送られた一覧の項目ごとに背景セッション（ `claude --bg` ）を始める。承認した文面と送られた文面が違えば、送られた文面に従う。セッションは Remote Control 付きで始めるので Claude Desktop のサイドバーに並び、本人はそこから開いて続きを指示する。Kickoff が作るのは、指示のファイルと背景セッションだけである。
+本人が今日の予定を送ったら、改めて確認せずに、スレッドを読み直して送られた一覧の項目ごとに背景セッション（ `claude --bg` ）を始める。承認した文面と送られた文面が違えば、送られた文面に従う。セッションは Remote Control 付きで始めるので Claude Desktop のサイドバーに並び、本人はそこから開いて続きを指示する。Kickoff が書き込むのは、指示のファイル、背景セッション、その固定と解除だけである。
 
 ### Items
 
-一覧の 1 行を 1 件とし、Slack に表示される行の文面から一覧の番号を除いたものを、その項目の名前とする。今日の予定の書式では、Issue の項目の名前は `<Issue の ID>: <タイトル>` になり、行のリンク先が Issue の URL である。レビューを作業とする項目は除く。「各種RV」や、タイトルに「レビュー」「RV」を含む項目がこれにあたる。レビューは本人が行い、PR のレビューのセッションは定期タスク potts が始める。
+一覧の 1 行を 1 件とし、Slack に表示される行の文面から一覧の番号を除いたものを、その項目の名前とする。今日の予定の書式では、Issue の項目の名前は `<Issue の ID>: <タイトル>` になり、行のリンク先が Issue の URL である。レビューを作業とする項目は除く。「各種RV」や、タイトルに「レビュー」「RV」を含む項目がこれにあたる。レビューは本人が行い、PR のレビューのセッションは定期タスク auto-review が始める。
 
 始める項目ごとに、セッションを始めるフォルダを決める。Issue の項目は `get_issue` で説明・添付・プロジェクトを読み、そこに出てくるリポジトリや PR を手がかりに、 `~/Documents` の直下、 `~/batb` 、 `~/.claude` にある Git のリポジトリから選ぶ。それぞれのリポジトリ名は `git -C <フォルダ> remote get-url origin` で分かる。どのリポジトリにも当てはまらない作業（スライドや資料づくりなど）は「このコンピューター」で始める。
 
@@ -103,21 +103,16 @@ Linear の `list_issues` を `assignee: me` で、 `state` を `started` と `un
 
 ### Start
 
-セッションは次の順に始める。
+セッションは Skill `session-kickoff` に従って、次の順に始める。
 
-1. `claude auth status` で CLI のログインを確かめる。ログインしていなくても `claude --bg` はセッションを作り、動かないまま待たせるため、先に確かめる。 `loggedIn` が `true` でなければ、セッションを始めずに止め、「CLI へのログインが必要（ `claude auth login` ）」と報告する
-2. `claude agents --json` で、 `kind` が `background` で、 `name` が Issue の ID か項目の名前を含むセッションを、状態を問わず探す。見つかった項目は新たに始めない
-3. 残りの項目ごとに、[Brief](#brief) のとおり指示のファイルをこの実行の scratchpad に書き、承認の表で示したフォルダで次のコマンドを実行する
+1. `session-kickoff` の Start の 1 のとおり CLI のログインを確かめる。ログインしていなければ、セッションを始めずに止め、「CLI へのログインが必要（ `claude auth login` ）」と報告する
+2. `session-kickoff` の Unpin のとおり固定を見直す。このタスクの決めた形は、名前が Issue の ID で始まるセッションである。 `get_issue` で Issue を読み、状態の種類が `completed` か `canceled` であれば固定を外す
+3. `claude agents --json --all` で、 `kind` が `background` で、 `name` が Issue の ID か項目の名前を含むセッションを探す。見つかった項目は新たに始めない
+4. 残りの項目ごとに、[Brief](#brief) のとおり指示のファイルをこの実行の scratchpad に書き、承認の表で示したフォルダで、項目の名前をセッションの名前として始める。Issue の項目は固定する。Issue のない項目は、固定を外す時期が決まらないので固定しない
 
-`--remote-control` で、Claude Desktop のサイドバー、claude.ai/code、スマホから開けるようにする。モデルは Opus 5.5（ `claude-opus-5-5` ）、effort は `xhigh` にする。別名の `opus` は Opus 5 で始まるため使わない。Git のリポジトリでは `-w` で名前を自動で付けた worktree を作り、本体のブランチや変更に触れないようにする。
+モデルは Opus 5.5（ `claude-opus-5-5` ）、effort は `xhigh` にするため、追加の引数は `--model claude-opus-5-5 --effort xhigh` とする。別名の `opus` は Opus 5 で始まるため使わない。
 
 「このコンピューター」は、Claude Desktop がフォルダを指定しないセッションに使う置き場である。 `~/Library/Application Support/Claude/scratch-workspaces/4e1795b5-fd40-46bf-b0ee-c2ab9e8f762b/e56be690-54d3-4900-8fac-2d99cf8625c5/` に `scratch-<YYYY-MM-DD>-<16 進 6 桁>` のフォルダを作り、 `-w` を付けずに始める。このセッションは、サイドバーで「Remote Control」の下に並ぶ。
-
-```bash
-cd "<フォルダ>" && claude --bg --remote-control "<名前>" -w -n "<名前>" --model claude-opus-5-5 --effort xhigh --permission-mode auto "$(cat <指示のファイル>)"
-```
-
-出力の `backgrounded · <id> · <名前>` の `<id>` が、セッションを開いたり消したりするときの値である。
 
 ### Brief
 
@@ -140,7 +135,7 @@ cd "<フォルダ>" && claude --bg --remote-control "<名前>" -w -n "<名前>" 
 
 ### Report
 
-始め終えたら、[Items](#items) の表の「セッション」の列を結果に置き換えて示す。始めた項目には `<id>` を、始めなかった項目には理由（レビュー、既存のセッションがある、CLI へのログインが必要、始められなかった）を書き、既存のセッションがある項目にはその `<id>` も添える。出力に `backgrounded` の行がなかった項目は始められなかったものとし、表の後に出力の全文と指示のファイルのパスを書く。作業を終えたセッションは、本人が `claude rm <id>` で消す。worktree で始めたセッションは worktree ごと消える。
+始め終えたら、[Items](#items) の表の「セッション」の列を結果に置き換えて示す。始めた項目には `<id>` を、始めなかった項目には理由（レビュー、既存のセッションがある、CLI へのログインが必要、始められなかった）を書き、既存のセッションがある項目にはその `<id>` も添える。出力に `backgrounded` の行がなかった項目は始められなかったものとし、表の後に出力の全文と指示のファイルのパスを書く。固定できなかった項目にはそのエラーを、固定を外したセッションがあればその id と名前を、表の後に書く。作業を終えたセッションは、本人が `claude rm <id>` で消す。worktree で始めたセッションは worktree ごと消える。
 
 ## Judgment
 
