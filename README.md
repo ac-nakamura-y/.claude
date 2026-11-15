@@ -23,11 +23,10 @@
 
 ## Skills
 
-`skills/` の各ディレクトリが 1 つの Skill に対応する。外部で配布されている Skill はサブモジュールとして取り込み、それ以外はこのリポジトリで直接管理する。
+`skills/` の各ディレクトリが 1 つの Skill に対応する。外部で配布されている Skill はサブモジュールとして取り込み、それ以外はこのリポジトリで直接管理する。Claude のアプリや Orca・Ego などのツールが自分で配置して更新する Skill は `.gitignore` で除外し、バージョン管理しない。
 
 | Skill | 取得元 | 役割 |
 | :-- | :-- | :-- |
-| `frontend-slides` | zarazhangrui/frontend-slides | ブラウザだけで動くスライドを作る |
 | `humanizer` | blader/humanizer | AI が書いたような文章を書き手の言葉へ直す |
 | `git-flow` | このリポジトリ | ブランチ・worktree・Pull Request の運用 |
 | `imagegen` | このリポジトリ | 画像の生成と編集 |
