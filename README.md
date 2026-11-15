@@ -12,6 +12,7 @@
 │   └── dependabot.yml          # サブモジュールの更新 Pull Request を毎週立てる
 ├── skills/                     # Skill 群
 ├── scripts/
+│   ├── auto-resume/            # 使用量の上限で止まった会話を、解除の時刻に自動で再開するフックの実行ファイル
 │   ├── fable-advice/           # manage Skill でサブエージェントが報告を返した後に Fable へ問いかけを求めるフックの実行ファイル
 │   ├── language-drift/         # 応答の言語のずれを見つけて言い直させるフックの実行ファイル
 │   ├── report-gaps/            # 報告に欠けた前提・結論・根拠を見つけて言い直させるフックの実行ファイル
@@ -40,7 +41,9 @@
 
 ## Runtime
 
-`/trinity:run` は実行するプロジェクトのルートに `.trinity/<run>/` を作り、worktree とログをそこへ置く。`~/.claude/` 配下には実行時の成果物を作らない。
+`/trinity:run` は実行するプロジェクトのルートに `.trinity/<run>/` を作り、worktree とログをそこへ置き、`~/.claude/` 配下には実行時の成果物を作らない。
+
+`scripts/auto-resume/` は、判定と再開の記録を `~/.claude/resume-logs/` に、会話ごとの再開の状態を `~/.claude/auto-resume/` に置く。いずれもバージョン管理しない。
 
 ## References
 
