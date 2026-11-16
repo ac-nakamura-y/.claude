@@ -29,3 +29,10 @@ plugins/.install-manifests/
 # macOS
 .DS_Store
 **/.DS_Store
+
+# Skills that other tools place and update here are not version-controlled.
+/skills/synced/
+/skills/ego-browser
+/skills/orca-cli
+/skills/orca-computer-use
+/skills/orchestration

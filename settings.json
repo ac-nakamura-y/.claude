@@ -4,27 +4,38 @@
     "defaultMode": "auto"
   },
   "hooks": {
-    "PostCompact": [
+    "StopFailure": [
+      {
+        "matcher": "rate_limit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/.claude/scripts/auto-resume/detect.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "\"$HOME/.claude/scripts/fable-advice/advise.mjs\"",
-            "timeout": 120
+            "command": "\"$HOME/.claude/scripts/language-drift/check.mjs\"",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "command": "\"$HOME/.claude/scripts/report-gaps/check.mjs\"",
+            "timeout": 60
           }
         ]
       }
     ]
   },
   "enabledPlugins": {
-    "claude-md-management@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
-    "pr-review-toolkit@claude-plugins-official": true,
-    "hookify@claude-plugins-official": true,
-    "claude-code-setup@claude-plugins-official": true,
-    "example-skills@anthropic-agent-skills": true,
     "trinity@yjn279": true,
     "eli5@claude-community": true,
     "fde@activecore": true,
@@ -66,6 +77,7 @@
     }
   },
   "outputStyle": "Concise",
+  "cleanupPeriodDays": 90,
   "effortLevel": "xhigh",
   "modelSettings": {
     "claude-opus-5": {
