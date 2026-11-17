@@ -41,7 +41,6 @@
 | `linear` | このリポジトリ | Linear Issue の起票 |
 | `manage` | このリポジトリ | メインエージェントを管理役に徹させ、実務をサブエージェントへ任せる |
 | `markdown` | このリポジトリ | Markdown とそれに準じた記法 |
-| `playwright-cli` | このリポジトリ | ブラウザ操作と Web ページのテスト |
 | `pr-stats` | このリポジトリ | Pull Request の週次集計 |
 | `product-management` | このリポジトリ | 価値提供の指標と、作らずに済ませる判断 |
 | `session-kickoff` | このリポジトリ | 作業ごとに背景セッションを始め、返事を待つ間も止まらないよう固定する |
