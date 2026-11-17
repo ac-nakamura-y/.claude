@@ -9,11 +9,11 @@ description: Fills the Jobcan 小口経費精算 form with round-trip commute fa
 
 ## Prerequisites
 
-ジョブカンはログイン済みの Ego Lite で開く。ログイン画面が出た場合は認証情報を入力せず、ユーザーに Ego Lite でのログインを依頼して待つ。
+ジョブカンは Ego Lite で操作し、出社日は Google カレンダーの勤務場所から取得する。
 
 | Tool | Purpose |
 | :-- | :-- |
-| ego-browser | 申請書の操作 |
+| ego-browser | ジョブカンのシフト確認と申請書の操作 |
 | Google Calendar | 勤務場所から出社日を取得（ `list_events` ） |
 
 ## Defaults
