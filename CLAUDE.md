@@ -49,7 +49,7 @@ advisor 機能は積極的に利用する。特に、作業に入る前・行き
 
 作業を行う際は、そのタスクに関連する Skill を必ず確認し、適用する。
 
-- `/playwright-cli` : `attach --cdp=chrome` でログイン済みの Chrome ブラウザに接続し、 `playwright-cli tab-new` で新しいタブを開いて作業する。
+- `/ego-browser` : ブラウザ操作には Ego Lite を使う。Chrome や他のブラウザツールは使わない。ログインが必要なときはユーザーに Ego Lite でのログインを依頼する。
 
 Skill および Agent 向けの設定資産（Skill、ルール、フック等）は `~/.claude/` 配下で管理する。`~/.cursor/` 配下には新規作成しない。Skill を追加・更新するときは `~/.claude/skills/<skill-name>/SKILL.md` を編集し、必要に応じて同ディレクトリ内に reference ファイルを置く。
 
