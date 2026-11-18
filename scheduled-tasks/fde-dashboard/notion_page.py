@@ -1,7 +1,7 @@
 """その日の FDE の会議ページを Notion の議事録 DB（marutto_議事録）に用意し、ダッシュボードの HTML ファイルを添付する。
 月曜は「[FDE] プランニング」、火〜金は「[FDE] デイリー」。ページは、議事録 DB にある同じ名前のテンプレートから作り、日時をその日にする。
 その日のページがすでにあれば作らない。
-ダッシュボード（fde-planning-2026-10-05.html）は、「会話事項」の見出しの下にある最初の空の行へ、fde-dashboard-<asOf>.html という名前で添付する。
+ダッシュボード（fde-planning-2026-10-05.html）は、ページの最初の空の行（テンプレートでは、デイリーは「会話事項」、プランニングは「アジェンダ」の下）へ、fde-dashboard-<asOf>.html という名前で添付する。
 ページの用意と添付の確認は Notion の公式 API で、添付そのものは Ego Lite で Notion の画面から行う。すでに添付があれば添付しない。
 
 Usage: python3 notion_page.py <asOf YYYY-MM-DD>
@@ -47,26 +47,16 @@ else:
                        "カテゴリ": {"select": {"name": "FDE"}},
                        "日時": {"date": {"start": as_of}}}}), True
 
-def section():
-    """「会話事項」の見出しから次の見出しまでのブロック。見出しがなければ None。"""
-    blocks = api("GET", f"blocks/{page['id']}/children?page_size=100")["results"]
-    text = lambda b: "".join(t["plain_text"] for t in b[b["type"]].get("rich_text", []))
-    heads = [i for i, b in enumerate(blocks) if b["type"].startswith("heading_") and "会話事項" in text(b)]
-    if not heads: return None
-    rest = blocks[heads[0] + 1:]
-    end = next((i for i, b in enumerate(rest) if b["type"].startswith("heading_")), len(rest))
-    return rest[:end]
-
+def children(): return api("GET", f"blocks/{page['id']}/children?page_size=100")["results"]
 def attached(blocks): return any(b["type"] == "file" and b["file"].get("name") == NAME for b in blocks)
 
-# ---- 添付先を確かめる（テンプレートの中身は作成のあと少し遅れて入る）
+# ---- 添付先の空の行を探す（テンプレートの中身は作成のあと少し遅れて入る）
 for _ in range(30):
-    blocks = section()
-    if blocks is not None:
-        slot = next((b["id"] for b in blocks if b["type"] == "paragraph" and not b["paragraph"]["rich_text"]), None)
-        if attached(blocks) or slot: break
+    blocks = children()
+    slot = next((b["id"] for b in blocks if b["type"] == "paragraph" and not b["paragraph"]["rich_text"]), None)
+    if attached(blocks) or slot: break
     time.sleep(2)
-else: sys.exit("ページの「会話事項」の見出しの下に、添付先の空の行がない")
+else: sys.exit("ページに、添付先の空の行がない")
 
 # ---- Ego Lite で、空の行を File ブロックにしてダッシュボードを添付する
 uploaded = not attached(blocks)
@@ -79,7 +69,8 @@ const page = (await task.pages())[0] ?? (await task.newPage());
 await page.goto(INPUT.url, { timeout: 60000, waitUntil: "domcontentloaded" });
 const slot = '[data-block-id="' + INPUT.slot + '"] [contenteditable="true"]';
 await page.waitForSelector(slot, { state: "visible", timeout: 60000 });
-await page.click(slot, { label: "会話事項の空の行" });
+await page.evaluate((s) => document.querySelector(s).scrollIntoView({ block: "center" }), slot);
+await page.click(slot, { label: "添付先の空の行" });
 await page.keyboard.type("/file");
 await page.waitForSelector('text="Filtered results"', { state: "visible", timeout: 10000 });
 await page.keyboard.press("Enter");
@@ -94,7 +85,7 @@ await task.finish({ keep: [] });
     r = subprocess.run(["ego-browser", "nodejs"], input=script, text=True, capture_output=True, timeout=300)
     if r.returncode: sys.exit(f"Ego Lite での添付に失敗した（Notion にログインしているか確かめる）\n{r.stdout}{r.stderr}")
     for _ in range(30):
-        if attached(section()): break
+        if attached(children()): break
         time.sleep(2)
     else: sys.exit(f"画面では添付したが、ページに {NAME} の File ブロックが見つからない")
 print(("作成" if made else "既存") + f" {TITLE} {as_of} " + ("添付" if uploaded else "添付済み") + f" {page['url']}")
