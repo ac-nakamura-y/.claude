@@ -7,7 +7,7 @@ description: Rebuilds the FDE dashboard from the latest Linear issues and Do³ r
 
 ## Overview
 
-Linear の Initiative「[FDE]」のプロジェクトと Issue、Slack の Do³ の記録を取り込み、FDE プランニング・デイリーのダッシュボード（Artifact https://claude.ai/artifact/XQYFeVcmGrKdYyDXFh4RU5 ）を作り直して公開する。続けて、その日の FDE の会議ページ（月曜は「[FDE] プランニング」、火〜金は「[FDE] デイリー」）を Notion の議事録 DB に用意し、ダッシュボードの HTML ファイルを添付する。会議はそのページを開くだけで始められる。道具とデータは `~/.claude/scheduled-tasks/fde-dashboard/` にあり、 `src.html` がダッシュボードのデータの正本である。
+Linear の Initiative「[FDE]」のプロジェクトと Issue、Slack の Do³ の記録を取り込み、FDE プランニング・デイリーのダッシュボード（Artifact https://claude.ai/artifact/XQYFeVcmGrKdYyDXFh4RU5 ）を作り直して公開する。続けて、その日の FDE の会議ページ（月曜は「[FDE] プランニング」、火〜金は「[FDE] デイリー」）を Notion の議事録 DB に用意し、ダッシュボードの HTML ファイルを添付する。会議はそのページを開くだけで始められる。このタスクは、定期タスク `fde-daily-planning` が毎営業日の 10 時に、その日の会議の開始 10 分前へ 1 回だけ起動するよう予約する。道具とデータは `~/.claude/scheduled-tasks/fde-dashboard/` にあり、 `src.html` がダッシュボードのデータの正本である。
 
 実行中に守る決まりを次に示す。
 
