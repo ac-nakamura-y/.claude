@@ -3,7 +3,7 @@ name: fde-dashboard
 description: Every weekday at 10:00, asks assignees to check their overdue FDE issues in Linear, then 10 minutes before the day's FDE meeting rebuilds the FDE dashboard, publishes it, and attaches it to the meeting page in Notion
 ---
 
-# FDE デイリー・プランニング
+# FDE Daily Planning
 
 ## Overview
 
@@ -25,7 +25,7 @@ FDE の会議（月曜は「[FDE] プランニング」、火〜金は「[FDE] �
 | 再実行 | `src.html` が今日すでに作り直されていても、そのまま全部の手順を行う |
 | 言葉 | ユーザーに書く文は、待っている間の一言も含めてすべて日本語で書き、「FDE デイリー・プランニング（ `<ASOF>` ）」の作業だとわかるようにする |
 
-処理は、10 時に Calendar・Book・Remind を行い、会議の 10 分前に Fetch・Rebuild・Publish・Register・Notion・Report を行う。
+処理は、10 時に Calendar・Book・Remind と朝の報告を行い、会議の 10 分前に Fetch・Rebuild・Publish・Register・Notion と更新の報告を行う。
 
 ## Calendar
 
@@ -54,13 +54,12 @@ ToolSearch を `{"query": "google calendar list_events", "max_results": 5}` で�
 
 | 状況 | 行うこと |
 | :-- | :-- |
-| 会議がない | ダッシュボードは作り直さない。Remind のあと、朝の報告で「会議なし」と伝えて終える |
-| 会議がすでに始まっている | ダッシュボードは作り直さない。Remind のあと、朝の報告で「会議が始まっているため更新なし」と伝えて終える |
+| 会議がない、またはすでに始まっている | ダッシュボードは作り直さない。Remind のあと、朝の報告をして終える |
 | 更新の時刻まで 10 分以上ある | ToolSearch を `{"query": "select:CronCreate", "max_results": 1}` で呼んで読み込み、CronCreate を下のパラメータで呼ぶ |
-| 更新の時刻まで 10 分ない、または過ぎたが、会議はまだ始まっていない | 予約しない。Remind のあと、続けて Fetch に進む |
+| 更新の時刻まで 10 分未満か過ぎているが、会議はまだ始まっていない | 予約しない。朝の報告のあと、続けて Fetch に進む |
 
 ```json
-{"cron": "<更新の分> <更新の時> <ASOF の日> <ASOF の月> *", "recurring": false, "prompt": "FDE ダッシュボード更新の時刻になった。手順書の Fetch から Report までを行う。ASOF と OUT は Calendar の値をそのまま使う。"}
+{"cron": "<更新の分> <更新の時> <ASOF の日> <ASOF の月> *", "recurring": false, "prompt": "FDE ダッシュボード更新の時刻になった。手順書の Fetch から Notion までと更新の報告を行う。ASOF と OUT は Calendar の値をそのまま使う。"}
 ```
 
 予約はこの会話の中だけにあり、朝の報告のあと会話が待っている間に、更新の時刻が来ると届く。
@@ -73,40 +72,15 @@ Fetch の「Linear」と「Linear 472」の 2 つの本文で、Agent ツール�
 python3 ~/.claude/scheduled-tasks/fde-dashboard/collect.py <ASOF> <OUT>
 ```
 
-ダッシュボードで「期限超過」と表示される Issue を選ぶ。表示されるのは、終わっていないプロジェクトで、期限日が今日より前の終わっていない Issue のうち、担当者が FDE のメンバーで、かつそのプロジェクトのリードかメンバーであるものである。
+`collect.py` は、ダッシュボードで「期限超過」と表示される Issue を `<OUT>/overdue.json` に `[[ID, 題名, 期限日, 担当者の Linear の表示名], ...]` の形で書く。その各 Issue に、担当者へのコメントを送る。ToolSearch を `{"query": "linear list_comments save_comment", "max_results": 5}` で 1 回だけ呼び、Linear の list_comments・save_comment を読み込む。
 
-```bash
-python3 - <OUT> <ASOF> <<'EOF'
-import json, sys
-out, as_of = sys.argv[1:]
-FAMILY = {"渡邉駿介": "渡邉", "孫政": "孫", "野田えりか": "野田", "向笠愛美": "向笠", "榎本巧": "榎本", "松本直": "松本", "中村勇士": "中村"}
-LINEAR = {"渡邉": "s.watanabe", "孫": "s.son", "野田": "e.noda", "向笠": "a.mukasa", "榎本": "t.enomoto", "松本": "n.matsumoto", "中村": "y.nakamura"}
-projects = json.load(open(f"{out}/projects.json"))
-rows = []
-for key, issues in json.load(open(f"{out}/due.json")).items():
-    p = projects[key]
-    owners = {FAMILY[n] for n in [p["lead"], *p["members"]] if n in FAMILY}
-    rows += [[i, t, d, LINEAR[who]] for i, t, d, who, _ in issues if d < as_of and who in owners]
-print("\n".join(f"{i} {d} @{u} {t}" for i, t, d, u in rows) or "期限超過の Issue なし")
-EOF
-```
-
-出力の 1 行が 1 件で、Issue の ID・期限日・担当者の Linear の表示名・題名の順に並ぶ。各 Issue に、担当者へのコメントを送る。ToolSearch を `{"query": "linear list_comments save_comment", "max_results": 5}` で 1 回だけ呼び、Linear の list_comments・save_comment を読み込む。
-
-同じ日に 2 度送らないよう、Issue ごとに先に `list_comments` を `{"issueId": "<Issue の ID>", "orderBy": "createdAt", "limit": 50}` で呼ぶ。結果の hasNextPage が true なら、返った cursor を "cursor" に足して続きを呼び、hasNextPage が false になるまで読む。今日（JST）作られたコメントに「ステータス・期限日のご確認をお願いします」を含むものがあれば、その Issue には送らない。なければ `save_comment` を次の本文で呼ぶ。 `<表示名>` は出力の `@` の後ろの値で、本文の 1 行目と 2 行目は改行 1 つでつなぐ。
+同じ日に 2 度送らないよう、Issue ごとに先に `list_comments` を `{"issueId": "<ID>", "orderBy": "createdAt", "limit": 50}` で呼ぶ。結果の `hasNextPage` が `true` なら、返った `cursor` を足して続きを呼び、 `false` になるまで読む。今日（JST）作られたコメントに「ステータス・期限日のご確認をお願いします」を含むものがあれば、その Issue には送らない。なければ `save_comment` を次の本文で呼ぶ。本文の 1 行目と 2 行目は改行 1 つでつなぐ。
 
 ```json
-{"issueId": "<Issue の ID>", "body": "@<表示名>\nこちらの issue について、ステータス・期限日のご確認をお願いします！"}
+{"issueId": "<ID>", "body": "@<担当者の Linear の表示名>\nこちらの issue について、ステータス・期限日のご確認をお願いします！"}
 ```
 
-Issue どうしは独立なので、 `list_comments` と `save_comment` はそれぞれ 1 回のメッセージで並べて呼んでよい。
-
-送り終えたら、日本語で朝の報告をする。
-
-| 項目 | 中身 |
-| :-- | :-- |
-| ダッシュボードの更新 | 会議の件名と開始時刻、予約した更新の時刻（予約しなかった場合はその理由） |
-| 期限超過のコメント | 送った Issue（ID・担当者・題名）と、今日すでに送っていたため送らなかった Issue。0 件なら「期限超過の Issue なし」 |
+Issue どうしは独立なので、 `list_comments` と `save_comment` はそれぞれ 1 回のメッセージで並べて呼んでよい。送り終えたら、Report の朝の報告をする。
 
 ## Fetch
 
@@ -279,7 +253,15 @@ python3 ~/.claude/scheduled-tasks/fde-dashboard/notion_page.py <ASOF>
 
 ## Report
 
-日本語で、次の項目を短く報告する。
+報告は、Remind のあとの朝の報告と、Notion のあとの更新の報告の 2 回を、日本語で短く行う。朝の報告の項目を次に示す。
+
+| 項目 | 中身 |
+| :-- | :-- |
+| ダッシュボードの更新 | 会議の件名と開始時刻、予約した更新の時刻（予約しなかった場合はその理由） |
+| 期限超過のコメント | 送った Issue（ID・担当者・題名）と、今日すでに送っていたため送らなかった Issue。0 件なら「期限超過の Issue なし」 |
+| 止まった場合 | 止まった手順とエラーの文面 |
+
+更新の報告の項目を次に示す。
 
 | 項目 | 出どころ |
 | :-- | :-- |
@@ -292,4 +274,4 @@ python3 ~/.claude/scheduled-tasks/fde-dashboard/notion_page.py <ASOF>
 
 ## Rerun
 
-Report のあとにユーザーからやり直しを頼まれたら、同じ会話で Fetch から Report までをもう一度行う。 `ASOF` と `OUT` は Calendar の値をそのまま使う。 `collect.py` は同じ呼び出しのうち後のものを使うので、取り直した結果が使われる。Notion では、添付が新しいものに差し替わる。
+更新の報告のあとにユーザーからやり直しを頼まれたら、同じ会話で Fetch から Notion までと更新の報告をもう一度行う。 `ASOF` と `OUT` は Calendar の値をそのまま使う。 `collect.py` は同じ呼び出しのうち後のものを使うので、取り直した結果が使われる。Notion では、添付が新しいものに差し替わる。
