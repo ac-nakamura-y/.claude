@@ -28,6 +28,11 @@
             "type": "command",
             "command": "\"$HOME/.claude/scripts/report-gaps/check.mjs\"",
             "timeout": 60
+          },
+          {
+            "type": "command",
+            "command": "\"$HOME/.claude/scripts/auto-review/close.mjs\"",
+            "timeout": 10
           }
         ]
       }
