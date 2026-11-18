@@ -56,8 +56,8 @@ ToolSearch を `{"query": "google calendar list_events", "max_results": 5}` で�
 | :-- | :-- |
 | 会議がない | ダッシュボードは作り直さない。Remind のあと、朝の報告で「会議なし」と伝えて終える |
 | 会議がすでに始まっている | ダッシュボードは作り直さない。Remind のあと、朝の報告で「会議が始まっているため更新なし」と伝えて終える |
-| 更新の時刻がまだ来ていない | ToolSearch を `{"query": "select:CronCreate", "max_results": 1}` で呼んで読み込み、CronCreate を下のパラメータで呼ぶ |
-| 更新の時刻は過ぎたが、会議はまだ始まっていない | 予約しない。Remind のあと、続けて Fetch に進む |
+| 更新の時刻まで 10 分以上ある | ToolSearch を `{"query": "select:CronCreate", "max_results": 1}` で呼んで読み込み、CronCreate を下のパラメータで呼ぶ |
+| 更新の時刻まで 10 分ない、または過ぎたが、会議はまだ始まっていない | 予約しない。Remind のあと、続けて Fetch に進む |
 
 ```json
 {"cron": "<更新の分> <更新の時> <ASOF の日> <ASOF の月> *", "recurring": false, "prompt": "FDE ダッシュボード更新の時刻になった。手順書の Fetch から Report までを行う。ASOF と OUT は Calendar の値をそのまま使う。"}
