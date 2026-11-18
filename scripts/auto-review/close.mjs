@@ -27,7 +27,6 @@ const log = (line) => {
 // 子の処理：セッションが入力待ちに落ち着くのを待って閉じる。
 async function close(id) {
   const stateFile = path.join(JOBS, id, "state.json");
-  const lock = path.join(JOBS, id, "auto-review-close.lock");
   const { name } = readJson(stateFile);
   const deadline = Date.now() + IDLE_TIMEOUT_MINUTES * 60_000;
   const idle = () => readJson(stateFile).tempo === "idle";
@@ -45,20 +44,19 @@ async function close(id) {
     if (rm.status !== 0) throw new Error(`claude rm が失敗した（終了 ${rm.status ?? rm.signal}）: ${rm.error?.message ?? `${rm.stderr}${rm.stdout}`}`);
     log(`${id} ${name}: 閉じた ${rm.stdout.trim().replace(/\s+/g, " ")}`);
   } catch (e) {
-    fs.rmSync(lock, { force: true });
     log(`${id} ${name}: 閉じられなかった ${e.message}`);
     process.exit(1);
   }
 }
 
-// フックの処理：レビューのセッションで、最後の送信の問いへの答えが「送信する」なら、閉じる子を切り離して始める。
+// フックの処理：背景セッションで、最後の送信の問いへの答えが「送信する」なら、閉じる子を切り離して始める。
+// 別のフックの言い直しで重なった Stop（ stop_hook_active ）では、最初の Stop が始めた子に任せる。
 function detect() {
   const input = readJson(0);
+  if (input.stop_hook_active) process.exit(0);
   const id = input.session_id.slice(0, 8);
   const stateFile = path.join(JOBS, id, "state.json");
-  if (!fs.existsSync(stateFile)) process.exit(0);
-  const state = readJson(stateFile);
-  if (state.sessionId !== input.session_id || !state.name?.endsWith(" のレビュー")) process.exit(0);
+  if (!fs.existsSync(stateFile) || readJson(stateFile).sessionId !== input.session_id) process.exit(0);
 
   const answer = fs
     .readFileSync(input.transcript_path, "utf8")
@@ -68,14 +66,6 @@ function detect() {
     .findLast((row) => row.toolUseResult?.answers?.[QUESTION] !== undefined)
     ?.toolUseResult.answers[QUESTION];
   if (answer !== SEND) process.exit(0);
-
-  // 言い直しなどで Stop が重なっても、閉じる子は 1 つだけにする。claude rm が jobs/<id> ごと消すので、閉じれば錠も消える。
-  try {
-    fs.closeSync(fs.openSync(path.join(JOBS, id, "auto-review-close.lock"), "wx"));
-  } catch (e) {
-    if (e.code === "EEXIST") process.exit(0);
-    throw e;
-  }
   spawn(process.execPath, [fileURLToPath(import.meta.url), "--close", id], { detached: true, stdio: "ignore" }).unref();
 }
 
