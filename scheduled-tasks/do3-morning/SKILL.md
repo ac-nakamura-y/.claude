@@ -241,7 +241,7 @@ description は出典の引用から始め、Issue から依頼の原文へ辿�
 
 ### Slots
 
-空き時間は、今日の 9:30〜18:30 のうち、予定で埋まっていない時間とする。予定は Google Calendar の `list_events` で今日の分を取る。このとき、 `transparency` が `transparent` の予定（カレンダーで「予定なし」と表示する枠。本人の [雑務]・[タスク管理]・バッファなど）と、本人の返事（ `attendees` のうち `self` が真のものの `responseStatus` ）が `declined` の予定は、埋まっている時間に数えない。返事をしていない招待（ `needsAction` ）と不在（ `eventType` が `OUT_OF_OFFICE` ）は数える。空きは、文面を用意している時刻を 15 分単位に切り上げた時刻から数える。
+空き時間は、今日の 9:30〜18:30 のうち、予定で埋まっていない時間とする。予定は Google Calendar の `list_events` で今日の分を取り、本人が辞退した予定（ `attendees` のうち `self` が真のものの `responseStatus` が `declined` ）を除いて、すべて埋まっている時間に数える。「予定なし」と表示する [雑務]・[タスク管理]・ランチ・バッファや、このタスクが作った作業時間も含む。空きは、文面を用意している時刻を 15 分単位に切り上げた時刻から数える。
 
 カレンダーの予定は、項目 1 件ごとと、「各種RV」に添えたレビューの Issue 1 件ごとに 1 つ置き、「各種RV」の行そのものには置かない。長さは、レビューの項目（[Items](#items) と同じ判定）と「各種RV」に添えたレビューの Issue が 15 分、それ以外が 1 時間である。
 
@@ -284,6 +284,8 @@ description は出典の引用から始め、Issue から依頼の原文へ辿�
 | summary | 項目の名前（[Items](#items) と同じ。Issue の項目では `<Issue の ID>: <タイトル>` になる） |
 | startTime・endTime | 作業時間（UTC オフセットを付けない ISO 8601） |
 | colorId | 分類の colorId |
+| visibility | `private`（非公開） |
+| availability | `AVAILABILITY_FREE`（予定なし） |
 | description | Issue の URL。Issue のない項目には付けない |
 
 「各種RV」に添えたレビューの Issue の summary は、 `get_issue` で読んだ `<Issue の ID>: <タイトル>` とする。
