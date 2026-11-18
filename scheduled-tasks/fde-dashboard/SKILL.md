@@ -48,12 +48,12 @@ Linear と Linear 472 が終わったら、Slack を待たずに Rebuild の `co
 ```text
 FDE ダッシュボード更新の取得（Linear）を行う。Linear は読むだけで、書き込まない。
 
-1. ToolSearch を query "select:mcp__189ed02f-25ee-4c8e-a4c4-f4b3669aa668__list_projects,mcp__189ed02f-25ee-4c8e-a4c4-f4b3669aa668__list_cycles,mcp__189ed02f-25ee-4c8e-a4c4-f4b3669aa668__list_issues"、max_results 3 で 1 回だけ呼び、道具を読み込む。
+1. ToolSearch を {"query": "linear list_projects list_cycles list_issues", "max_results": 5} で 1 回だけ呼び、Linear の list_projects・list_cycles・list_issues を読み込む。道具の名前は「mcp__<Linear の接続名>__list_projects」の形で、接続名は環境によって変わる。
 2. list_projects を次のパラメータで 1 回呼ぶ。
    {"initiative": "I-40", "includeMembers": true, "includeMilestones": true, "limit": 50, "fields": ["id","uuid","name","url","sortOrder","status","startDate","targetDate","lead","members","milestones"]}
-   結果は大きく、ふつうは「Error: result (77,739 characters across 1 line) exceeds maximum allowed tokens. Output has been saved to <path>.txt」と返る。先頭に Error と付くが、結果がファイルに退避されただけでエラーではない。次のコマンドで、そのファイルから hasNextPage と、プロジェクトごとの id と状態を出す。
-   python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print("hasNextPage", d["hasNextPage"]); [print(p["id"], p["status"]["type"]) for p in d["projects"]]' <path>
-   退避されずにそのまま返ったときは、結果から同じものを読む。hasNextPage が true なら、そこで止めて返す。
+   結果は大きく、ふつうは「Error: result (… characters …) exceeds maximum allowed tokens. Output has been saved to <path>.txt」とファイルに退避される。先頭に Error と付くが失敗ではなく、結果は退避先にそろっている。そのときは次のコマンドで、プロジェクトの id と状態を 1 行ずつ出す。
+   python3 -c 'import json,sys; [print(p["id"], p["status"]["type"]) for p in json.load(open(sys.argv[1]))["projects"]]' <path>
+   退避されずにそのまま返ったときは、結果の projects から同じ 2 つを読む。list_projects の続きのページは確かめなくてよい（collect.py が確かめる）。
 3. list_cycles を次のパラメータで 1 回呼ぶ。結果は読まなくてよい。
    {"teamId": "099a4fcb-6960-429e-88a3-92d6ea8f8130", "type": "current"}
 4. 状態が started・planned・backlog のプロジェクトすべて（P-MRTTOPS-472 は除く）について、list_issues を次のパラメータで呼ぶ。プロジェクトどうしは独立なので、1 回のメッセージで並べて呼んでよい。
@@ -72,7 +72,7 @@ FDE ダッシュボード更新の取得（Linear）を行う。Linear は読む
 ```text
 FDE ダッシュボード更新の取得（Linear の P-MRTTOPS-472）を行う。Linear は読むだけで、書き込まない。
 
-1. ToolSearch を query "select:mcp__189ed02f-25ee-4c8e-a4c4-f4b3669aa668__list_issues"、max_results 1 で 1 回だけ呼び、道具を読み込む。
+1. ToolSearch を {"query": "linear list_issues", "max_results": 5} で 1 回だけ呼び、Linear の list_issues を読み込む。道具の名前は「mcp__<Linear の接続名>__list_issues」の形で、接続名は環境によって変わる。
 2. list_issues を次のパラメータで呼ぶ。
    {"project": "P-MRTTOPS-472", "limit": 100, "includeArchived": false, "fields": ["id","title","status","statusType","estimate","assignee","projectMilestone","dueDate"]}
    結果の hasNextPage が true なら、返った cursor を "cursor" に足し、ほかは同じパラメータで続きを呼ぶ。続きには前の結果の cursor が要るので、1 回ずつ順に呼ぶ。hasNextPage が false になるまで続ける（13 ページ前後になる）。結果には MRTTDEV の Issue も混じるが、そのままでよい。
@@ -107,7 +107,7 @@ FDE ダッシュボード更新の取得（Slack の Do³）を行う。Slack �
 | nakamura | 中村勇士 | U0438RB4V8T |
 ボット Do3 の Slack ID は U060JE24BQD、チャンネルは #01_1on1_prd_mktops（C0AHUKMEYFQ）である。ユーザーを調べる道具は使わない。
 
-1. ToolSearch を query "select:mcp__7f64050a-4866-46a9-9176-6d2dd22da98a__slack_read_channel,mcp__7f64050a-4866-46a9-9176-6d2dd22da98a__slack_read_thread"、max_results 2 で 1 回だけ呼び、道具を読み込む。
+1. ToolSearch を {"query": "slack_read_channel slack_read_thread", "max_results": 5} で 1 回だけ呼び、Slack の slack_read_channel・slack_read_thread を読み込む。道具の名前は「mcp__<Slack の接続名>__slack_read_channel」の形で、接続名は環境によって変わる。
 
 2. 読む範囲を決める。開始日は、do3Days の最初の日と、weekly の各木曜の 3 日前（同じ週の月曜）のうち、いちばん早い日である。年は今日の年とし、月曜が前の年の 12 月に戻るときだけ前の年にする。月曜の日付と、各日の 0 時（JST）のエポック秒は次で出す。
    date -j -v-3d -f '%Y-%m-%d' 2026-11-12 +%F                              # → 2026-11-09
@@ -126,7 +126,7 @@ FDE ダッシュボード更新の取得（Slack の Do³）を行う。Slack �
    <@U04ARB7BU5Q|向笠愛美> <@U060JE24BQD|Do3> do_daily_v2
    Thread: 17 replies (latest: 2026-10-20 11:52:01 JST)
    - 親の投稿：Do3 の投稿で、本文が「<@Slack ID|名前> <@U060JE24BQD|Do3> 種類」のもの。種類は do_daily_v2（日次、営業日の 9:00〜9:05 ごろ）、do_weekly（週次、木曜 17:00 ごろ。中村さんにはない）、do_weekly_manager（中村さんの週次、隔週の月曜 10:30 ごろ）の 3 つを使う。do_monthly・not_completed_list・not_completed_list_weekly・週次の未入力の知らせは使わない。
-   - まとめ：Do3 の投稿で、書き出しに「さんのまとめです！」を含むもの（例「向笠愛美 / aimi.mukasa / ... さんのまとめです！」。「/」の前後の空白はないこともある）。本人のスレッドに投稿されたまとめが、チャンネルにも同じ時刻で流れたものである。最後が「このまとめで合っていますか？」で終わっていてもまとめと数える。「さんのまとめです！」を含まない Do3 の投稿は、内容がまとめに似ていてもまとめではない。
+   - まとめ：Do3 の投稿で、本文の 1 行目が「さんのまとめです！」で終わるもの（例「向笠愛美 / aimi.mukasa / … さんのまとめです！」。「/」の前後の空白はないこともある）。本人のスレッドに投稿されたまとめが、チャンネルにも同じ時刻で流れたものである。1 行目がそうなら、最後が「このまとめで合っていますか？」で終わっていてもまとめである。1 行目がそうでない Do3 の投稿は、内容がまとめに似ていて「この内容で合っていますか？」で終わる確かめであっても、まとめではない。
 
 5. 日次の記号を付ける。do3Days の各日 D と各メンバーについて、D に投稿されたそのメンバー宛ての do_daily_v2 を使い、次の順に決める。
    a. D にそのメンバー宛ての親の投稿がない → N
@@ -152,8 +152,7 @@ FDE ダッシュボード更新の取得（Slack の Do³）を行う。Slack �
 8. ファイルを書く。どちらも 7 人全員の分を入れる。
    - <OUT>/do3.json：{"from": "<do3Days の最初の日>", "daily": {"watanabe": "<do3Days の順の記号>", ...}, "weekly": {"<W の M/D>": {"watanabe": "F", ...}}}。weekly が空なら "weekly": {} とする。
    - <OUT>/doubts.json：{"watanabe": {"d": "<TODAY>", "text": "<写した原文>"}, "son": null, ...}
-   Slack の結果は JSON の文字列で返るので、日本語が \uXXXX、改行が \n のように見えることがある。text にはその形のまま写してよい（JSON として読むと元の文字に戻る）。
-   書いたら、次で 2 つとも JSON として読めることを確かめる。
+   結果の日本語は「\uXXXX」の形で返ることがあるので、ファイルは python3 で json.dump(..., ensure_ascii=False) を使って書き、文字を元に戻す。書いたら、次で 2 つとも JSON として読めることを確かめる。
    python3 -c 'import json,sys; [json.load(open(f)) for f in sys.argv[1:]]' <OUT>/do3.json <OUT>/doubts.json
 
 決まり
