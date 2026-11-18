@@ -46,7 +46,7 @@ Linear と Linear 472 が終わったら、Slack を待たずに Rebuild の `co
 ### Linear
 
 ```text
-FDE ダッシュボード更新の取得（Linear）を行う。Linear は読むだけで、書き込まない。
+FDE ダッシュボード更新の取得（Linear）を行う。Linear は読むだけで、書き込まない。結果はあとで collect.py がこの会話の記録から直接読むので、書き写したりファイルに書いたりしない。「Output has been saved to」で終わるもの以外のエラーが返ったら、やり直さずにそこで止め、呼び出しとエラーの文面をそのまま返す。
 
 1. ToolSearch を {"query": "linear list_projects list_cycles list_issues", "max_results": 5} で 1 回だけ呼び、Linear の list_projects・list_cycles・list_issues を読み込む。道具の名前は「mcp__<Linear の接続名>__list_projects」の形で、接続名は環境によって変わる。
 2. list_projects を次のパラメータで 1 回呼ぶ。
@@ -60,26 +60,18 @@ FDE ダッシュボード更新の取得（Linear）を行う。Linear は読む
    {"project": "<プロジェクトの id>", "limit": 100, "includeArchived": false, "fields": ["id","title","status","statusType","estimate","assignee","projectMilestone","dueDate"]}
    結果の hasNextPage が true なら、返った cursor を "cursor" に足し、ほかは同じパラメータで続きを呼ぶ。hasNextPage が false になるまで続ける。Issue が 0 件のプロジェクトも、1 ページと数える。
 
-決まり
-- パラメータは上のとおりに使い、変えたり足したりしない。あとで collect.py がこの会話の記録から結果を直接読むので、結果を書き写したりファイルに書いたりしない。
-- 「Output has been saved to」で終わるもの以外のエラーが返ったら、やり直さずにそこで止め、呼び出しとエラーの文面をそのまま返す。
-
 返すもの：list_issues を呼んだプロジェクトの id とそれぞれのページ数、すべてが hasNextPage false で終わったか。件数は数えない。
 ```
 
 ### Linear 472
 
 ```text
-FDE ダッシュボード更新の取得（Linear の P-MRTTOPS-472）を行う。Linear は読むだけで、書き込まない。
+FDE ダッシュボード更新の取得（Linear の P-MRTTOPS-472）を行う。Linear は読むだけで、書き込まない。結果はあとで collect.py がこの会話の記録から直接読むので、書き写したりファイルに書いたりしない。「Output has been saved to」で終わるもの以外のエラーが返ったら、やり直さずにそこで止め、呼び出しとエラーの文面をそのまま返す。
 
 1. ToolSearch を {"query": "linear list_issues", "max_results": 5} で 1 回だけ呼び、Linear の list_issues を読み込む。道具の名前は「mcp__<Linear の接続名>__list_issues」の形で、接続名は環境によって変わる。
 2. list_issues を次のパラメータで呼ぶ。
    {"project": "P-MRTTOPS-472", "limit": 100, "includeArchived": false, "fields": ["id","title","status","statusType","estimate","assignee","projectMilestone","dueDate"]}
    結果の hasNextPage が true なら、返った cursor を "cursor" に足し、ほかは同じパラメータで続きを呼ぶ。続きには前の結果の cursor が要るので、1 回ずつ順に呼ぶ。hasNextPage が false になるまで続ける（13 ページ前後になる）。結果には MRTTDEV の Issue も混じるが、そのままでよい。
-
-決まり
-- パラメータは上のとおりに使い、変えたり足したりしない。あとで collect.py がこの会話の記録から結果を直接読むので、結果を書き写したりファイルに書いたりしない。
-- 「Output has been saved to」で終わるもの以外のエラーが返ったら、やり直さずにそこで止め、呼び出しとエラーの文面をそのまま返す。
 
 返すもの：呼んだページ数と、最後が hasNextPage false で終わったか。件数は数えない。
 ```
@@ -87,7 +79,7 @@ FDE ダッシュボード更新の取得（Linear の P-MRTTOPS-472）を行う�
 ### Slack
 
 ```text
-FDE ダッシュボード更新の取得（Slack の Do³）を行う。Slack は読むだけで、投稿しない。
+FDE ダッシュボード更新の取得（Slack の Do³）を行う。Slack は読むだけで、投稿しない。「Output has been saved to」で終わるもの以外のエラーが返ったら、やり直さずにそこで止め、呼び出しとエラーの文面をそのまま返す。
 
 入力
 - 今日：<ASOF>（JST）、M/D では <TODAY>
@@ -154,9 +146,6 @@ FDE ダッシュボード更新の取得（Slack の Do³）を行う。Slack �
    - <OUT>/doubts.json：{"watanabe": {"d": "<TODAY>", "text": "<写した原文>"}, "son": null, ...}
    結果の日本語は「\uXXXX」の形で返ることがあるので、ファイルは python3 で json.dump(..., ensure_ascii=False) を使って書き、文字を元に戻す。書いたら、次で 2 つとも JSON として読めることを確かめる。
    python3 -c 'import json,sys; [json.load(open(f)) for f in sys.argv[1:]]' <OUT>/do3.json <OUT>/doubts.json
-
-決まり
-- 「Output has been saved to」で終わるもの以外のエラーが返ったら、やり直さずにそこで止め、呼び出しとエラーの文面をそのまま返す。
 
 返すもの：日次と週次の記号の表、迷い・判断を写した人、スレッドを読んだ数。
 ```
