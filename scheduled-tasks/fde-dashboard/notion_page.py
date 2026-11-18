@@ -2,7 +2,8 @@
 月曜は「[FDE] プランニング」、火〜金は「[FDE] デイリー」。ページは、議事録 DB にある同じ名前のテンプレートから作り、日時をその日にする。
 その日のページがすでにあれば作らない。
 ダッシュボード（fde-planning-2026-10-05.html）は fde-dashboard-<asOf>.html という名前の File ブロックにして、
-ページの最初の空の行（テンプレートでは、デイリーは「会話事項」、プランニングは「アジェンダ」の下）の前に置く。すでに添付があれば添付しない。
+ページの最初の空の行（テンプレートでは、デイリーは「会話事項」、プランニングは「アジェンダ」の下）の前に置く。
+同じ名前の添付がすでにあれば（同じ日のやり直し）、新しいものをその位置に置いてから古いものを消し、差し替える。
 
 Usage: python3 notion_page.py <asOf YYYY-MM-DD>
   認証は Notion の公式 API のトークン（~/.config/notion/token）を使う。トークンのコネクトを議事録 DB に接続しておく。
@@ -54,19 +55,19 @@ else:
                        "カテゴリ": {"select": {"name": "FDE"}},
                        "日時": {"date": {"start": as_of}}}}), True
 
-# ---- 添付先（最初の空の行の、ひとつ前のブロック）を探す（テンプレートの中身は作成のあと少し遅れて入る）
+# ---- 置く位置を決める：同じ名前の添付があればその位置、なければ最初の空の行の位置（テンプレートの中身は作成のあと少し遅れて入る）
 for _ in range(30):
     blocks = api("GET", f"blocks/{page['id']}/children?page_size=100")["results"]
-    attached = any(b["type"] == "file" and b["file"].get("name") == NAME for b in blocks)
-    after = next((blocks[i - 1]["id"] for i, b in enumerate(blocks) if i and b["type"] == "paragraph" and not b["paragraph"]["rich_text"]), None)
-    if attached or after: break
+    old = next((i for i, b in enumerate(blocks) if b["type"] == "file" and b["file"].get("name") == NAME), None)
+    at = old if old is not None else next((i for i, b in enumerate(blocks) if b["type"] == "paragraph" and not b["paragraph"]["rich_text"]), None)
+    if at: break
     time.sleep(2)
-else: sys.exit("ページに、添付先の空の行がない")
+else: sys.exit("ページに、添付先の空の行（とその手前のブロック）がない")
 
-# ---- ダッシュボードを送り、File ブロックとして置く
-if not attached:
-    upload = api("POST", "file_uploads", {"filename": NAME, "content_type": "text/html"})
-    api("POST", f"file_uploads/{upload['id']}/send", file=DASHBOARD)
-    api("PATCH", f"blocks/{page['id']}/children", {"after": after, "children": [
-        {"type": "file", "file": {"type": "file_upload", "file_upload": {"id": upload["id"]}, "name": NAME}}]})
-print(("作成" if made else "既存") + f" {TITLE} {as_of} " + ("添付済み" if attached else "添付") + f" {page['url']}")
+# ---- ダッシュボードを送り、その位置の手前のブロックの直後に File ブロックとして置く。差し替えなら、置いたあとで古いものを消す
+upload = api("POST", "file_uploads", {"filename": NAME, "content_type": "text/html"})
+api("POST", f"file_uploads/{upload['id']}/send", file=DASHBOARD)
+api("PATCH", f"blocks/{page['id']}/children", {"after": blocks[at - 1]["id"], "children": [
+    {"type": "file", "file": {"type": "file_upload", "file_upload": {"id": upload["id"]}, "name": NAME}}]})
+if old is not None: api("DELETE", f"blocks/{blocks[old]['id']}")
+print(("作成" if made else "既存") + f" {TITLE} {as_of} " + ("差し替え" if old is not None else "添付") + f" {page['url']}")

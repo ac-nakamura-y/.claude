@@ -4,7 +4,7 @@
 Usage: python3 collect.py <asOf YYYY-MM-DD> <outdir>
   会話の記録は環境変数 CLAUDE_CODE_SESSION_ID で探す。次の呼び出しの結果を使う（同じ呼び出しが複数あれば後のものを使う）。
   - list_projects: initiative "I-40"、includeMembers・includeMilestones を true、fields に PROJECT_FIELDS を含める
-  - list_issues: project ごとに limit 250・fields に ISSUE_FIELDS を含める。hasNextPage が true なら cursor で最後まで続ける
+  - list_issues: project ごとに limit 100・fields に ISSUE_FIELDS を含める。hasNextPage が true なら cursor で最後まで続ける
   - list_cycles: teamId は marutto-ops（TEAM）、type "current"
   書くもの: projects.json, issues.json, issues_472.json, due.json, cycle.txt（今週の Cycle 番号）
 """
