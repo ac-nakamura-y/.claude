@@ -6,7 +6,7 @@ Usage: python3 collect.py <asOf YYYY-MM-DD> <outdir>
   - list_projects: initiative "I-40"、includeMembers・includeMilestones を true、fields に PROJECT_FIELDS を含める
   - list_issues: project ごとに limit 100・fields に ISSUE_FIELDS を含める。hasNextPage が true なら cursor で最後まで続ける
   - list_cycles: teamId は marutto-ops（TEAM）、type "current"
-  書くもの: projects.json, issues.json, issues_472.json, due.json, cycle.txt（今週の Cycle 番号）
+  書くもの: projects.json, issues.json, issues_472.json, due.json, overdue.json, cycle.txt（今週の Cycle 番号）
 """
 import glob, json, os, re, sys
 from datetime import date, timedelta
@@ -16,6 +16,7 @@ ISSUE_FIELDS = {"id", "title", "status", "statusType", "estimate", "assignee", "
 TEAM = "099a4fcb-6960-429e-88a3-92d6ea8f8130"
 BIG = "P-MRTTOPS-472"
 FAMILY = {"渡邉駿介": "渡邉", "孫政": "孫", "野田えりか": "野田", "向笠愛美": "向笠", "榎本巧": "榎本", "松本直": "松本", "中村勇士": "中村"}
+LINEAR_NAME = {"渡邉駿介": "s.watanabe", "孫政": "s.son", "野田えりか": "e.noda", "向笠愛美": "a.mukasa", "榎本巧": "t.enomoto", "松本直": "n.matsumoto", "中村勇士": "y.nakamura"}
 OPEN = {"triage", "backlog", "unstarted", "started"}
 
 as_of, outdir = sys.argv[1], sys.argv[2]
@@ -101,6 +102,11 @@ for k in active:
             if x["dueDate"] and x["dueDate"] <= as_of and x["statusType"] in OPEN]
     due[k] = sorted(rows, key=lambda r: (r[2], r[0].rsplit("-", 1)[0], int(r[0].rsplit("-", 1)[1])))
 
+# ---- 期限超過：ダッシュボードが「期限超過」と出す Issue。期限日が今日より前で、担当者がそのプロジェクトのリードかメンバーである FDE のメンバー
+overdue = [[x["id"], x["title"], x["dueDate"], LINEAR_NAME[x["assignee"]]] for k in active for x in issues[k]
+           if x["dueDate"] and x["dueDate"] < as_of and x["statusType"] in OPEN and x["assignee"] in LINEAR_NAME
+           and x["assignee"] in {proj[k]["lead"], *proj[k]["members"]}]
+
 # ---- 今週の Cycle（月曜 0 時 JST に始まる 1 週間）
 cycles = [r for n, i, r in calls if n == "list_cycles" and i.get("teamId") == TEAM and i.get("type") == "current"]
 if not cycles or len(cycles[-1]) != 1: sys.exit("list_cycles（marutto-ops の current）の結果がない")
@@ -116,5 +122,6 @@ write("projects.json", proj)
 write("issues.json", {k: [row(x) for x in issues[k]] for k in active if k != BIG})
 write("issues_472.json", [row(x) for x in issues[BIG]])
 write("due.json", due)
+write("overdue.json", overdue)
 open(os.path.join(outdir, "cycle.txt"), "w").write(str(cycle["number"]))
 print(f"projects {len(proj)}（進行中など {len(active)}）| issues {sum(len(issues[k]) for k in active)}（472: {len(issues[BIG])}）| due {sum(map(len, due.values()))} | Cycle {cycle['number']}")

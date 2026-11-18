@@ -1,26 +1,31 @@
 ---
 name: fde-dashboard
-description: Rebuilds the FDE dashboard from the latest Linear issues and Do³ records, publishes it, and attaches it to the day's FDE meeting page in Notion
+description: Every weekday at 10:00, asks assignees to check their overdue FDE issues in Linear, then 10 minutes before the day's FDE meeting rebuilds the FDE dashboard, publishes it, and attaches it to the meeting page in Notion
 ---
 
-# FDE Dashboard
+# FDE Daily Planning
 
 ## Overview
 
-Linear の Initiative「[FDE]」のプロジェクトと Issue、Slack の Do³ の記録を取り込み、FDE プランニング・デイリーのダッシュボード（Artifact https://claude.ai/artifact/XQYFeVcmGrKdYyDXFh4RU5 ）を作り直して公開する。続けて、その日の FDE の会議ページ（月曜は「[FDE] プランニング」、火〜金は「[FDE] デイリー」）を Notion の議事録 DB に用意し、ダッシュボードの HTML ファイルを添付する。会議はそのページを開くだけで始められる。道具とデータは `~/.claude/scheduled-tasks/fde-dashboard/` にあり、 `src.html` がダッシュボードのデータの正本である。
+FDE の会議（月曜は「[FDE] プランニング」、火〜金は「[FDE] デイリー」）に向けて、営業日の 10 時に起動し、1 つの会話で次の 2 つを行う。
+
+- 10 時：Google カレンダーで会議の開始時刻を確かめ、開始の 10 分前にダッシュボードを作り直すよう、この会話の中に予約する。続けて Linear から Issue を取り込み、ダッシュボードで「期限超過」と表示される Issue すべてに、担当者へ確認を促すコメントを送る。
+- 会議の 10 分前：Linear の Initiative「[FDE]」のプロジェクトと Issue、Slack の Do³ の記録を取り込み、ダッシュボード（Artifact https://claude.ai/artifact/XQYFeVcmGrKdYyDXFh4RU5 ）を作り直して公開する。続けて、その日の会議ページを Notion の議事録 DB に用意し、ダッシュボードの HTML ファイルを添付する。会議はそのページを開くだけで始められる。
+
+道具とデータは `~/.claude/scheduled-tasks/fde-dashboard/` にあり、 `src.html` がダッシュボードのデータの正本である。
 
 実行中に守る決まりを次に示す。
 
 | 対象 | 決まり |
 | :-- | :-- |
-| 外部サービス | Linear と Slack は読むだけで、投稿・変更はしない。Notion は、その日の FDE の会議ページを作り、ダッシュボードを添付することだけを行う |
+| 外部サービス | Google カレンダーと Slack は読むだけで、変更・投稿はしない。Linear は、期限超過の Issue にコメントを送ることだけを行う。Notion は、その日の FDE の会議ページを作り、ダッシュボードを添付することだけを行う |
 | 道具 | 道具のコード（ `*.js` ・ `*.py` ）は直さず、読む必要もない。何を読み何を出すかは、この手順書に書いてある |
 | エラー | どこかでエラーが出たら、その時点で止め、エラーの文面をそのまま報告する。やり直しや回り道はしない |
 | 触らないもの | 差し込みタスク・今週のプロジェクト・目標は、この実行では触らない |
 | 再実行 | `src.html` が今日すでに作り直されていても、そのまま全部の手順を行う |
-| 言葉 | ユーザーに書く文は、待っている間の一言も含めてすべて日本語で書き、「FDE ダッシュボード更新（ `<ASOF>` ）」の作業だとわかるようにする |
+| 言葉 | ユーザーに書く文は、待っている間の一言も含めてすべて日本語で書き、「FDE デイリー・プランニング（ `<ASOF>` ）」の作業だとわかるようにする |
 
-処理は Calendar・Fetch・Rebuild・Publish・Register・Notion・Report の順に進む。
+処理は、10 時に Calendar・Book・Remind と朝の報告を行い、会議の 10 分前に Fetch・Rebuild・Publish・Register・Notion と更新の報告を行う。
 
 ## Calendar
 
@@ -31,15 +36,55 @@ TZ=Asia/Tokyo date +%F
 node ~/.claude/scheduled-tasks/fde-dashboard/days.js <ASOF>
 ```
 
-`days.js` は `{"businessDay": true, "do3Days": ["11/11", ..., "11/18"], "weekly": ["11/12"]}` の形の 1 行を出す。 `businessDay` が false なら、「祝日のため更新なし」とだけ報告して終える。true なら、作業用のフォルダ `OUT` を作る。 `OUT` は、この実行の scratchpad（システムプロンプトにある Scratchpad directory）の下の `fde-<ASOF>` で、絶対パスで扱う。
+`days.js` は `{"businessDay": true, "do3Days": ["11/11", ..., "11/18"], "weekly": ["11/12"]}` の形の 1 行を出す。 `businessDay` が false なら、「祝日のため実行なし」とだけ報告して終える。true なら、作業用のフォルダ `OUT` を作る。 `OUT` は、この実行の scratchpad（システムプロンプトにある Scratchpad directory）の下の `fde-<ASOF>` で、絶対パスで扱う。
 
 ```bash
 mkdir -p <OUT>
 ```
 
+## Book
+
+ToolSearch を `{"query": "google calendar list_events", "max_results": 5}` で呼んで Google カレンダーの list_events を読み込み、今日の予定を取る。
+
+```json
+{"startTime": "<ASOF>T00:00:00", "endTime": "<ASOF>T23:59:59", "orderBy": "startTime", "pageSize": 100}
+```
+
+予定のうち、件名がちょうど「[FDE] デイリー」か「[FDE] プランニング」で、 `status` が `cancelled` でないものを会議とする。「[FDE] プランニング領域改善の相談」のように件名が完全に一致しないものは会議ではない。会議が複数あれば、開始がいちばん早いものを使う。会議の開始時刻の 10 分前を、更新の時刻とする（例：開始 10:30 なら 10:20）。
+
+| 状況 | 行うこと |
+| :-- | :-- |
+| 会議がない、またはすでに始まっている | ダッシュボードは作り直さない。Remind のあと、朝の報告をして終える |
+| 更新の時刻まで 10 分以上ある | ToolSearch を `{"query": "select:CronCreate", "max_results": 1}` で呼んで読み込み、CronCreate を下のパラメータで呼ぶ |
+| 更新の時刻まで 10 分未満か過ぎているが、会議はまだ始まっていない | 予約しない。朝の報告のあと、続けて Fetch に進む |
+
+```json
+{"cron": "<更新の分> <更新の時> <ASOF の日> <ASOF の月> *", "recurring": false, "prompt": "FDE ダッシュボード更新の時刻になった。手順書の Fetch から Notion までと更新の報告を行う。ASOF と OUT は Calendar の値をそのまま使う。"}
+```
+
+予約はこの会話の中だけにあり、朝の報告のあと会話が待っている間に、更新の時刻が来ると届く。
+
+## Remind
+
+Fetch の「Linear」と「Linear 472」の 2 つの本文で、Agent ツール（ `subagent_type: "general-purpose"` 、 `run_in_background: true` ）を、1 回のメッセージで同時に起動する。Slack の取得はここでは行わない。2 つとも終わったら、Linear の結果をファイルにする。
+
+```bash
+python3 ~/.claude/scheduled-tasks/fde-dashboard/collect.py <ASOF> <OUT>
+```
+
+`collect.py` は、ダッシュボードで「期限超過」と表示される Issue を `<OUT>/overdue.json` に `[[ID, 題名, 期限日, 担当者の Linear の表示名], ...]` の形で書く。その各 Issue に、担当者へのコメントを送る。ToolSearch を `{"query": "linear list_comments save_comment", "max_results": 5}` で 1 回だけ呼び、Linear の list_comments・save_comment を読み込む。
+
+同じ日に 2 度送らないよう、Issue ごとに先に `list_comments` を `{"issueId": "<ID>", "orderBy": "createdAt", "limit": 50}` で呼ぶ。結果の `hasNextPage` が `true` なら、返った `cursor` を足して続きを呼び、 `false` になるまで読む。今日（JST）作られたコメントに「ステータス・期限日のご確認をお願いします」を含むものがあれば、その Issue には送らない。なければ `save_comment` を次の本文で呼ぶ。本文の 1 行目と 2 行目は改行 1 つでつなぐ。
+
+```json
+{"issueId": "<ID>", "body": "@<担当者の Linear の表示名>\nこちらの issue について、ステータス・期限日のご確認をお願いします！"}
+```
+
+Issue どうしは独立なので、 `list_comments` と `save_comment` はそれぞれ 1 回のメッセージで並べて呼んでよい。送り終えたら、Report の朝の報告をする。
+
 ## Fetch
 
-Linear・Linear 472・Slack の 3 つの取得を、Agent ツール（ `subagent_type: "general-purpose"` 、 `run_in_background: true` ）で、1 回のメッセージで同時に起動する。プロンプトは下の本文をそのまま使い、 `<ASOF>` ・ `<TODAY>` （ASOF の M/D。例 `11/18` ）・ `<OUT>` ・ `<do3Days>` ・ `<weekly>` だけを Calendar の値に置き換える。この会話では Linear と Slack を直接呼ばない。
+Linear・Linear 472・Slack の 3 つの取得を、Agent ツール（ `subagent_type: "general-purpose"` 、 `run_in_background: true` ）で、1 回のメッセージで同時に起動する。プロンプトは下の本文をそのまま使い、 `<ASOF>` ・ `<TODAY>` （ASOF の M/D。例 `11/18` ）・ `<OUT>` ・ `<do3Days>` ・ `<weekly>` だけを Calendar の値に置き換える。この会話では Linear の list_projects・list_issues・list_cycles と Slack を直接呼ばない。
 
 Linear と Linear 472 が終わったら、Slack を待たずに Rebuild の `collect.py` を実行する。Slack が終わったら、Rebuild の残りに進む。
 
@@ -158,7 +203,7 @@ Linear と Linear 472 の取得が終わったら、Linear の結果をファイ
 python3 ~/.claude/scheduled-tasks/fde-dashboard/collect.py <ASOF> <OUT>
 ```
 
-`collect.py` は、この会話の記録（本体、 `subagents/*.jsonl` 、ファイルに退避された結果）から Linear の呼び出しの結果を直接読む。会話は環境変数 `CLAUDE_CODE_SESSION_ID` で探し、この変数は実行の環境にすでに入っている。同じ呼び出しが何度もあれば、後のものを使う。ページが欠けていれば止まる。最後に `projects 36（進行中など 21）| issues 1722（472: 1281）| due 19 | Cycle 95` の形の 1 行を出し、Issue の件数はこの行を正とする。
+`collect.py` は、この会話の記録（本体、 `subagents/*.jsonl` 、ファイルに退避された結果）から Linear の呼び出しの結果を直接読む。同じ呼び出しが何度もあれば後のものを使うので、Remind で取った結果ではなく、この Fetch で取り直した結果が使われる。会話は環境変数 `CLAUDE_CODE_SESSION_ID` で探し、この変数は実行の環境にすでに入っている。ページが欠けていれば止まる。最後に `projects 36（進行中など 21）| issues 1722（472: 1281）| due 19 | Cycle 95` の形の 1 行を出し、Issue の件数はこの行を正とする。
 
 Slack の取得も終わったら、ダッシュボードを作り直す。どれかが失敗したら後ろを走らせないよう、1 つのコマンドとして `&&` でつないで実行する。
 
@@ -208,7 +253,15 @@ python3 ~/.claude/scheduled-tasks/fde-dashboard/notion_page.py <ASOF>
 
 ## Report
 
-日本語で、次の項目を短く報告する。
+報告は、Remind のあとの朝の報告と、Notion のあとの更新の報告の 2 回を、日本語で短く行う。朝の報告の項目を次に示す。
+
+| 項目 | 中身 |
+| :-- | :-- |
+| ダッシュボードの更新 | 会議の件名と開始時刻、予約した更新の時刻（予約しなかった場合はその理由） |
+| 期限超過のコメント | 送った Issue（ID・担当者・題名）と、今日すでに送っていたため送らなかった Issue。0 件なら「期限超過の Issue なし」 |
+| 止まった場合 | 止まった手順とエラーの文面 |
+
+更新の報告の項目を次に示す。
 
 | 項目 | 出どころ |
 | :-- | :-- |
@@ -221,4 +274,4 @@ python3 ~/.claude/scheduled-tasks/fde-dashboard/notion_page.py <ASOF>
 
 ## Rerun
 
-Report のあとにユーザーからやり直しを頼まれたら、同じ会話で Fetch から Report までをもう一度行う。 `ASOF` と `OUT` は Calendar の値をそのまま使う。 `collect.py` は同じ呼び出しのうち後のものを使うので、取り直した結果が使われる。Notion では、添付が新しいものに差し替わる。
+更新の報告のあとにユーザーからやり直しを頼まれたら、同じ会話で Fetch から Notion までと更新の報告をもう一度行う。 `ASOF` と `OUT` は Calendar の値をそのまま使う。 `collect.py` は同じ呼び出しのうち後のものを使うので、取り直した結果が使われる。Notion では、添付が新しいものに差し替わる。
