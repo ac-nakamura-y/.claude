@@ -15,6 +15,7 @@
 !/plugins/agent-config
 !/scheduled-tasks/
 /scheduled-tasks/*
+!/scheduled-tasks/fde-daily-planning/
 !/scheduled-tasks/fde-dashboard/
 /scheduled-tasks/fde-dashboard/*.html
 !/scheduled-tasks/do3-morning/
