@@ -21,7 +21,7 @@ Linear MCP の `save_issue` `get_team` `get_project` `list_issue_statuses` `list
 | project | `[FDE] 制作プロセス改善` |
 | assignee | null |
 | dueDate | null |
-| priority | medium（Linear `3`） |
+| priority | medium（Linear `3` ） |
 | status | `Triage` |
 | parentId | 親 Issue がある場合のみ |
 | labels | null |
@@ -46,7 +46,7 @@ flowchart LR
 - [ ] title・description・件数を確定する
 - [ ] team・project・親 Issue を解決する
 - [ ] 重複 Issue がないことを確認する
-- [ ] `save_issue` で作成する（`state: Triage`）
+- [ ] `save_issue` で作成する（ `state: Triage` ）
 - [ ] 必要なら `blockedBy` / `relatedTo` を設定する
 - [ ] 作成結果を一覧で報告する
 
@@ -99,7 +99,7 @@ description: |
 
 ## Start
 
-セッションが Issue の作業に取りかかるときは、作業の最初に、確認なしで Issue を `In Progress` にする。In Progress の Issue は、ほかのセッションや定期タスク do3-morning が「すでに誰かが取り組んでいる」と判断する印になる。
+セッションが Issue の作業に取りかかるときは、作業の最初に、確認なしで Issue を `In Progress` にする。
 
 1. `get_issue` で状態を読む
 2. 状態の種類が `triage` ・ `backlog` ・ `unstarted` のときだけ、 `save_issue({ id: "<Issue の ID>", state: "In Progress" })` を呼ぶ。 `started` （In Progress・In Review・In Customer）、 `completed` 、 `canceled` の Issue は変えない

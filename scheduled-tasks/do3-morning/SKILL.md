@@ -1,9 +1,9 @@
 ---
 name: do3-morning
-description: Do³ の日次セッションへの返信を書いて Ego Lite から Slack に送り、前営業日に届いた依頼を Linear の Issue にし、今日の予定を空き時間に収め、レビュー以外の作業ごとに Claude Code の背景セッションを始めて、作業時間をカレンダーに入れる。本人に確認するのは今日の予定と判断に迷った場面だけ
+description: Writes the replies to the Do³ daily session and sends them to Slack through Ego Lite, turns the previous business day's requests into Linear issues, fits today's tasks into free calendar time, starts a Claude Code background session for each non-review task, and adds the work time to the calendar. Asks the user only about today's tasks and the judgment scene.
 ---
 
-# Do³ モーニング
+# Do³ Morning
 
 平日の朝、Do³ の日次セッション（ `do_daily_v2` ）で本人が送る返信を用意して送る。Do³ は営業日の朝、#01_1on1_prd_mktops などのチャンネルにメンバーごとのスレッドを立て、昨日終わらせたこと、今日の予定、判断に迷った場面、その判断基準を 1 問ずつ聞き、最後にまとめを示す。予実を共有し、どんな場面でどんな基準で判断しているかを積み重ねて見えるようにするのが Do³ の目的である。
 
@@ -26,7 +26,7 @@ description: Do³ の日次セッションへの返信を書いて Ego Lite か�
 | 9 | 判断に迷った場面の候補を 5 つ示し、選ばれたものを送る | [Judgment](#judgment)・[Posting](#posting) | 選んでもらう |
 | 10 | 判断基準を書いて送る | [Judgment](#judgment)・[Posting](#posting) | なし |
 | 11 | まとめの確認に返信する | [Summary](#summary)・[Posting](#posting) | なし |
-| 12 | 結果を報告する | [Report](#report) | なし |
+| 12 | 送った返信と止まって本人に任せた返信、作った Issue、[Kickoff Report](#kickoff-report) の表、[Events](#events) の表、失敗したこととそのエラーをまとめて報告する | | なし |
 
 スレッドで本人がすでに答えた問いは、その送信の手順を済んだものとする。今日の予定を本人がすでに送っていても、7 と 8 は行う。どちらも、すでにあるセッションと予定を作り直さない。
 
@@ -49,18 +49,6 @@ PR の状態は PR ごとに `gh pr view <PR の URL> --json state,mergedAt` で
 
 この判定は、昨日終わらせたこと、今日の候補、依頼の照合、固定の解除で使う。
 
-## Questions
-
-Do³ の問いと、それぞれへの返信の形を次に示す。材料の取り方は問いごとの節に書く。
-
-| 問い | 返信の形 | 材料 |
-| :-- | :-- | :-- |
-| 昨日終わらせたこと | 挨拶と前置きの後に、番号付きの一覧 | 前営業日の Calendar・Slack・Claude のセッション・Linear・git |
-| 今日の予定（優先度順） | 前置きの後に、Linear の Issue へのリンク付きの一覧 | Linear の担当 Issue、前営業日に届いた依頼、その日の Calendar |
-| 判断に迷った場面 | 3 文ほどの文章 | 前営業日の Claude のセッションでの本人の発言 |
-| 何を基準に判断したか | 3〜4 文の文章 | 送った場面と、同じセッションでの発言 |
-| まとめの確認 | 「ありがとうございます、相違ないです。」と気づき | ここまでのスレッド |
-
 ## Yesterday
 
 「昨日」は前営業日を指し、月曜なら金曜を振り返る。次の材料をすべて読み、その日の作業を集める。Issue になっていない作業も拾う。
@@ -69,7 +57,7 @@ Do³ の問いと、それぞれへの返信の形を次に示す。材料の取
 | :-- | :-- | :-- |
 | Google Calendar | `list_events` でその日の予定 | 会議名から、その準備にした作業 |
 | Slack | `slack_search_public_and_private` を `from:<@本人の ID> on:YYYY-MM-DD` で検索し、必要ならスレッドを読む | 送付、レビュー、依頼への対応 |
-| Claude のセッション | `list_sessions`（ `include_archived: true` ）と `list_events` で、その日の本人の発言を読む | 作業の中身。時刻は UTC のため JST に直して絞る |
+| Claude のセッション | `list_sessions` （ `include_archived: true` ）と `list_events` で、その日の本人の発言を読む | 作業の中身。時刻は UTC のため JST に直して絞る |
 | Linear | `list_issues` を `assignee: me` と `completedAt` 、または `creator: me` で取る | 完了した Issue、起票した Issue |
 | GitHub | `gh search prs --author @me --merged-at "<範囲>"` と `gh search prs --reviewed-by @me --merged-at "<範囲>"` 。範囲は `YYYY-MM-DDT00:00:00+09:00..<翌日>T00:00:00+09:00` と JST で書く。日付だけでは UTC の 1 日になる | マージした PR、レビューした PR のマージ。PR を添付した Issue は、Linear の状態によらずその日に完了したものとする |
 | git | `~/.claude` などのリポジトリの `git log` | 追加した Skill |
@@ -111,16 +99,18 @@ Do³ の問いと、それぞれへの返信の形を次に示す。材料の取
 
 ## Requests
 
-前営業日に本人へ届いた依頼のうち、まだ Issue のないものを、本人が選んだ分だけ Linear の Issue にする。次の 1〜8 を毎回この順に、書いたツールと引数だけで行う。1〜7 は手順 3、8 は手順 4 で行う。
+前営業日に本人へ届いた依頼のうち、まだ Issue のないものを、本人が選んだ分だけ Linear の Issue にする。次の 1〜8 を毎回この順に、書いたツールと引数だけで行う。1〜7 は手順 3、8 は手順 4 で行う。Backlog は対象にしない。Backlog の依頼は課題として担当と期限を持ち、Linear に写すと同じ作業が 2 か所に並ぶためである。
 
-1. **範囲を決める。** 前営業日の 0 時から今日の 0 時（JST）までとする。月曜は金曜の 0 時から今日の 0 時までとする。Backlog は対象にしない。Backlog の依頼は課題として担当と期限を持ち、Linear に写すと同じ作業が 2 か所に並ぶためである
-2. **議事録の一覧を取る。** `~/batb/bin/batb query --recent --limit 50` を実行する。一覧は `updated` の新しい順に並ぶので、末尾の `updated` が範囲の始まりより新しければ、 `--limit` を 2 倍にして取り直す。 `created` が範囲に入り、 `source` が Google ドキュメントのものを議事録とする。資料データベースのファイルを直接読むなど、 `batb query` 以外の方法では取らない。 `batb` が失敗したら、そのエラーを 7 の表の後に書き、議事録なしで 3 に進む
-3. **議事録の本文を読む。** 議事録 1 件ごとにサブエージェントを 1 つ起動する。 `source` の URL から Google Drive の `read_file_content` で本文を読ませ、[Selection](#selection) の「本人の作業と読めるもの」に当たる項目を、原文の引用、依頼者、作業の中身の 3 点で返させる。議事録で本人を指す名前は、Slack の検索結果で本人へのメンションに付く表示名から、添え書きを除いたものとして渡す。読めなかった議事録は 7 の表の後に書く
-4. **Slack のメンションを取る。** `slack_search_public_and_private` で本人へのメンションを下の引数で検索し、 `cursor` を辿ってすべて取る。依頼かどうかにスレッドの文脈が要るときは、 `slack_read_thread` で親から読む
-5. **依頼を選ぶ。** 3 と 4 で集めた項目に [Selection](#selection) の 2 つの表を当て、案にする依頼を残す。同じ依頼が議事録と Slack の両方や複数の会議に出るときは、1 つにまとめる
-6. **既存の Issue と照らし合わせる。** [Matching](#matching) のとおり照らし合わせ、当たった依頼を案から除く
-7. **案を示す。** [Proposal](#proposal) の表と、案にしなかった依頼を示す
-8. **Issue を作る。** 本人が選んだ案だけを、[Creation](#creation) のとおり作る
+| # | 手順 | やること |
+| --: | :-- | :-- |
+| 1 | 範囲を決める | 前営業日の 0 時から今日の 0 時（JST）までとする。月曜は金曜の 0 時から今日の 0 時までとする |
+| 2 | 議事録の一覧を取る | `~/batb/bin/batb query --recent --limit 50` を実行し、 `created` が範囲に入り、 `source` が Google ドキュメントのものを議事録とする。一覧は `updated` の新しい順に並ぶので、末尾の `updated` が範囲の始まりより新しければ、 `--limit` を 2 倍にして取り直す。 `batb query` 以外の方法では取らない。失敗したら、そのエラーを 7 で示し、議事録なしで 3 に進む |
+| 3 | 議事録の本文を読む | 議事録 1 件ごとにサブエージェントを 1 つ起動し、 `source` の URL から Google Drive の `read_file_content` で本文を読ませる。[Selection](#selection) の「本人の作業と読めるもの」に当たる項目を、原文の引用、依頼者、作業の中身の 3 点で返させる。本人の名前は、Slack の検索結果で本人へのメンションに付く表示名から、添え書きを除いたものとして渡す。読めなかった議事録は 7 で示す |
+| 4 | Slack のメンションを取る | `slack_search_public_and_private` で本人へのメンションを下の引数で検索し、 `cursor` を辿ってすべて取る。依頼かどうかにスレッドの文脈が要るときは、 `slack_read_thread` で親から読む |
+| 5 | 依頼を選ぶ | 3 と 4 で集めた項目に [Selection](#selection) の 2 つの表を当て、案にする依頼を残す。同じ依頼が議事録と Slack の両方や複数の会議に出るときは、1 つにまとめる |
+| 6 | 既存の Issue と照らし合わせる | [Matching](#matching) のとおり照らし合わせ、当たった依頼を案から除く |
+| 7 | 案を示す | [Proposal](#proposal) の表と、案にしなかった依頼を示す |
+| 8 | Issue を作る | 本人が選んだ案だけを、[Creation](#creation) のとおり作る |
 
 ```yaml
 keywords: ["<@本人の ID>"]
@@ -207,7 +197,7 @@ description は出典の引用から始め、Issue から依頼の原文へ辿�
 
 ## Kickoff
 
-今日の予定を送ったら（手順 6）、改めて確認せずに、送った一覧の項目ごとに背景セッション（ `claude --bg` ）を始める。セッションは Remote Control 付きで始めるので Claude Desktop のサイドバーに並び、本人はそこから開いて続きを指示する。Kickoff が書き込むのは、指示のファイル、背景セッション、その固定と解除、始めた Issue の状態だけで、カレンダーの予定は [Calendar](#calendar) が作る。
+今日の予定を送ったら（手順 6）、改めて確認せずに、送った一覧の項目ごとに背景セッション（ `claude --bg` ）を始める。セッションは Remote Control 付きで始めるので Claude Desktop のサイドバーに並び、本人はそこから開いて続きを指示する。Kickoff が書き込むのは、指示のファイル、背景セッション、その固定と解除だけで、カレンダーの予定は [Calendar](#calendar) が作る。
 
 ### Items
 
@@ -218,7 +208,6 @@ description は出典の引用から始め、Issue から依頼の原文へ辿�
 | 除く項目 | 理由 |
 | :-- | :-- |
 | 「各種RV」と、タイトルに「レビュー」「RV」を含む項目 | レビューは本人が行い、PR のレビューのセッションは定期タスク auto-review が始める |
-| 状態が `In Progress` の Issue | 本人か別のセッションがすでに取り組んでいる。そのセッションには触れない |
 | `claude agents --json --all` で、 `kind` が `background` で `name` が Issue の ID か項目の名前を含むセッションがある項目 | 同じ作業のセッションがすでにある |
 
 始める項目ごとに、セッションを始めるフォルダを決める。Issue の項目は `get_issue` で説明・添付・プロジェクトを読み、そこに出てくるリポジトリや PR を手がかりに、 `~/Documents` の直下、 `~/batb` 、 `~/.claude` にある Git のリポジトリから選ぶ。それぞれのリポジトリ名は `git -C <フォルダ> remote get-url origin` で分かる。どのリポジトリにも当てはまらない作業（スライドや資料づくりなど）は「このコンピューター」で始める。
@@ -227,9 +216,8 @@ description は出典の引用から始め、Issue から依頼の原文へ辿�
 | # | 作業 | フォルダ | セッション |
 | --: | :-- | :-- | :-- |
 | 1 | MRTTOPS-9429: [資生堂] 最終報告資料の後半（今後の進め方・28 年度への言及・第2回 PoC のスライド）を直して原嶋さんに渡す | このコンピューター | 始める |
-| 2 | MRTTOPS-xxxx: [阪急交通社] 〇〇を直す | | 除く（In Progress） |
-| 3 | MRTTOPS-9506: [資生堂] サイクル1 初稿 → GAさま：レビュー | | 除く（レビュー） |
-| 4 | 各種RV（ac-llm-platform#371 ほか） | | 除く（レビュー） |
+| 2 | MRTTOPS-9506: [資生堂] サイクル1 初稿 → GAさま：レビュー | | 除く（レビュー） |
+| 3 | 各種RV（ac-llm-platform#371 ほか） | | 除く（レビュー） |
 ```
 
 ### Start
@@ -239,7 +227,7 @@ description は出典の引用から始め、Issue から依頼の原文へ辿�
 1. `session-kickoff` の Start の 1 のとおり CLI のログインを確かめる。ログインしていなければ、セッションを始めずに止め、「CLI へのログインが必要（ `claude auth login` ）」と報告する
 2. `session-kickoff` の Unpin のとおり固定を見直す。このタスクの決めた形は、名前が Issue の ID で始まるセッションである。その Issue が [Done](#done) で完了とみなせれば固定を外す
 3. [Items](#items) で除いた項目を除き、残りの項目ごとに、[Brief](#brief) のとおり指示のファイルをこの実行の scratchpad に書き、承認の表で示したフォルダで、項目の名前をセッションの名前として始める
-4. 始められたこと（状態が `failed` でないこと）を確かめた Issue の項目ごとに、セッションを固定し、Skill `linear` の Start のとおり Issue を `In Progress` にする。Issue のない項目は、固定を外す時期が決まらないので固定しない
+4. 始められたこと（状態が `failed` でないこと）を確かめた Issue の項目ごとに、セッションを固定する。Issue のない項目は、固定を外す時期が決まらないので固定しない
 
 モデルは Opus 5.5（ `claude-opus-5-5` ）、effort は `xhigh` にするため、追加の引数は `--model claude-opus-5-5 --effort xhigh` とする。別名の `opus` は Opus 5 で始まるため使わない。
 
@@ -250,7 +238,7 @@ description は出典の引用から始め、Issue から依頼の原文へ辿�
 次をこのまま書き、 `<>` を埋める。スレッドの permalink は、検索結果の `Permalink` から `?` 以降を除いたものである。Issue のない項目は、Issue の行と手順の 3 を除き、手順の番号を詰める。
 
 ```markdown
-<名前> に取り組む。このセッションは、利用者が Do³ のスレッドで今日の予定に挙げた作業として、定期タスク do3-morning が始めた。Issue は do3-morning が In Progress にしてある。
+<名前> に取り組む。このセッションは、利用者が Do³ のスレッドで今日の予定に挙げた作業として、定期タスク do3-morning が始めた。
 
 - Do³ のスレッド：<スレッドの permalink>
 - Issue：<Issue の URL>
@@ -266,7 +254,7 @@ description は出典の引用から始め、Issue から依頼の原文へ辿�
 
 ### Kickoff Report
 
-始め終えたら、[Items](#items) の表の「セッション」の列を結果に置き換えて示す。始めた項目には `<id>` を、始めなかった項目には理由（レビュー、In Progress、既存のセッションがある、CLI へのログインが必要、始められなかった）を書き、既存のセッションがある項目にはその `<id>` も添える。始められなかった項目は、Skill `session-kickoff` が返したものを表の後に書く。固定できなかった項目と In Progress にできなかった項目にはそのエラーを、固定を外したセッションがあればその id と名前を、表の後に書く。作業を終えたセッションは、本人が `claude rm <id>` で消す。worktree で始めたセッションは worktree ごと消える。
+始め終えたら、[Items](#items) の表の「セッション」の列を結果に置き換えて示す。始めた項目には `<id>` を、始めなかった項目には理由（レビュー、既存のセッションがある、CLI へのログインが必要、始められなかった）を書き、既存のセッションがある項目にはその `<id>` も添える。始められなかった項目は、Skill `session-kickoff` が返したものを表の後に書く。固定できなかった項目にはそのエラーを、固定を外したセッションがあればその id と名前を、表の後に書く。作業を終えたセッションは、本人が `claude rm <id>` で消す。worktree で始めたセッションは worktree ごと消える。
 
 ## Calendar
 
@@ -314,8 +302,8 @@ description は出典の引用から始め、Issue から依頼の原文へ辿�
 | summary | 項目の名前（[Items](#items) と同じ。Issue の項目では `<Issue の ID>: <タイトル>` になる） |
 | startTime・endTime | 作業時間（UTC オフセットを付けない ISO 8601） |
 | colorId | 分類の colorId |
-| visibility | `private`（非公開） |
-| availability | `AVAILABILITY_FREE`（予定なし） |
+| visibility | `private` （非公開） |
+| availability | `AVAILABILITY_FREE` （予定なし） |
 | description | Issue の URL。Issue のない項目には付けない |
 
 「各種RV」に添えたレビューの Issue の summary は、 `get_issue` で読んだ `<Issue の ID>: <タイトル>` とする。
@@ -366,11 +354,13 @@ Do³ はここまでの内容をまとめて「このまとめ内容で合って
 
 1 通ごとに次の 1〜5 を行う。
 
-1. `slack_read_thread` でスレッドを読み、最後の Do³ の投稿がこれから答える問いで、本人がまだ答えていないことを確かめる。問いがまだ届いていなければ、次の手順の材料集めを先に進め、文面ができた時点で読み直す。それでも届いていなければ、文面を示して止まり、問いが届いたら知らせるよう本人に頼む
-2. `slack_send_message_draft` に、[Thread](#thread) で決めたチャンネルの ID、親メッセージの ts（ `thread_ts` ）、文面を渡して下書きを置く。 `attached_draft_exists` で失敗したら、本人の書きかけかもしれないので消さずに止め、Slack で送るか消すよう本人に頼む
-3. Ego Lite で `https://app.slack.com/client/T03RBH796SE/<チャンネルの ID>/thread/<チャンネルの ID>-<親メッセージの ts>` を開く。スレッドの入力欄（ `[data-qa="threads_flexpane"] [data-qa="message_input"]` ）の文字列に、文面の 1 行目の先頭 10 文字が入るまで、20 秒を限りに待つ
-4. スレッドの送信ボタン（ `[data-qa="threads_flexpane"] button[data-qa="texty_send_button"]` ）をクリックする。Return キーは改行になるため使わない
-5. `slack_read_thread` で読み直し、本人の返信として文面が届いたことを確かめる。確かめたら、Ego Lite のタスクスペースを `finish({ keep: [] })` で閉じる
+| # | 手順 | やること |
+| --: | :-- | :-- |
+| 1 | 問いを確かめる | `slack_read_thread` でスレッドを読み、最後の Do³ の投稿がこれから答える問いで、本人がまだ答えていないことを確かめる。問いがまだ届いていなければ、次の手順の材料集めを先に進め、文面ができた時点で読み直す。それでも届いていなければ、文面を示して止まり、問いが届いたら知らせるよう本人に頼む |
+| 2 | 下書きを置く | `slack_send_message_draft` に、[Thread](#thread) で決めたチャンネルの ID、親メッセージの ts（ `thread_ts` ）、文面を渡す。 `attached_draft_exists` で失敗したら、本人の書きかけかもしれないので消さずに止め、Slack で送るか消すよう本人に頼む |
+| 3 | スレッドを開く | Ego Lite で `https://app.slack.com/client/T03RBH796SE/<チャンネルの ID>/thread/<チャンネルの ID>-<親メッセージの ts>` を開く。スレッドの入力欄（ `[data-qa="threads_flexpane"] [data-qa="message_input"]` ）の文字列に、文面の 1 行目の先頭 `10` 文字が入るまで、 `20` 秒を限りに待つ |
+| 4 | 送信する | スレッドの送信ボタン（ `[data-qa="threads_flexpane"] button[data-qa="texty_send_button"]` ）をクリックする。Return キーは改行になるため使わない |
+| 5 | 届いたか確かめる | `slack_read_thread` で読み直し、本人の返信として文面が届いたことを確かめる。確かめたら、Ego Lite のタスクスペースを `finish({ keep: [] })` で閉じる |
 
 次のときは、送り直しや別の送り方をせずに止め、何が起きたかと、本人が Slack から送れるようにコードブロックの文面を示す。
 
@@ -380,16 +370,6 @@ Do³ はここまでの内容をまとめて「このまとめ内容で合って
 | 3 で入力欄に下書きが出ない | Slack の「下書きと送信済み」で下書きを確かめて送る |
 | 4 のクリックが権限の確認で拒まれた | Slack のスレッドで下書きを送る |
 | 5 で返信が届いていない | Slack のスレッドを確かめ、届いていなければ送る |
-
-## Report
-
-手順 12 では、次をまとめて報告する。
-
-- 送った返信と、止まって本人に任せた返信
-- 作った Issue（title・project・URL）
-- [Kickoff Report](#kickoff-report) の表
-- [Events](#events) の表
-- 途中で失敗したことと、そのエラー
 
 ## Style
 

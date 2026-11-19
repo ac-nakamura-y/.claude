@@ -104,8 +104,6 @@ flowchart LR
 
 重複が疑われる場合は `list_issues` で検索し、既存 Issue があるときは新規作成せずその URL を返す。旧 Issue を統合する場合は `duplicateOf` で Duplicate 化してから新 Issue を作成する。
 
-Linear の Issue の作業に取りかかるときは、Skill `linear` の Start のとおり、最初にその Issue を In Progress にする。
-
 ## Notion Operations
 
 Notion の読み書きは、Notion の公式 API で行う。手順とスクリプトは Skill `logistics:notion` を参照する。
