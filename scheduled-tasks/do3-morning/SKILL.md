@@ -43,9 +43,9 @@ description: Do³ の日次セッションへの返信を書いて Ego Lite か�
 Issue が完了したかは、次のどちらかに当たるかで決める。PR がマージされた Issue は、Linear の状態が残っていても完了とみなす。Linear の状態は変えない。
 
 1. 状態の種類（ `statusType` ）が `completed` か `canceled` である
-2. `get_issue` の `attachments` に GitHub の PR（URL が `https://github.com/<owner>/<repo>/pull/<番号>` のもの）が 1 本以上あり、どれも開いておらず、1 本以上がマージされている
+2. `get_issue` の `attachments` に GitHub の PR（URL が `https://github.com/<owner>/<repo>/pull/<番号>` のもの）が 1 本以上あり、どれも開いておらず、1 本以上がマージされている。定期タスク auto-review が作るレビューの Issue（title が `<リポジトリ名>#<PR の番号> をレビューする：` で始まるもの）は、PR がマージされずに閉じられていても完了とする
 
-PR の状態は PR ごとに `gh pr view <PR の URL> --json state,mergedAt` で読む。 `state` が `OPEN` なら開いている、 `MERGED` ならマージ済みである。PR が 1 本もない Issue は 1 だけで決める。
+PR の状態は PR ごとに `gh pr view <PR の URL> --json state,mergedAt` で読む。 `state` が `OPEN` なら開いている、 `MERGED` ならマージ済み、 `CLOSED` ならマージされずに閉じられている。PR が 1 本もない Issue は 1 だけで決める。 `list_issues` の結果には `attachments` が出ないため、判定する Issue はすべて `get_issue` で読む。
 
 この判定は、昨日終わらせたこと、今日の候補、依頼の照合、固定の解除で使う。
 
@@ -71,7 +71,7 @@ Do³ の問いと、それぞれへの返信の形を次に示す。材料の取
 | Slack | `slack_search_public_and_private` を `from:<@本人の ID> on:YYYY-MM-DD` で検索し、必要ならスレッドを読む | 送付、レビュー、依頼への対応 |
 | Claude のセッション | `list_sessions`（ `include_archived: true` ）と `list_events` で、その日の本人の発言を読む | 作業の中身。時刻は UTC のため JST に直して絞る |
 | Linear | `list_issues` を `assignee: me` と `completedAt` 、または `creator: me` で取る | 完了した Issue、起票した Issue |
-| GitHub | `gh search prs --author @me --merged-at YYYY-MM-DD` と `gh search prs --reviewed-by @me --merged-at YYYY-MM-DD` | マージした PR、レビューした PR のマージ。PR を添付した Issue は、Linear の状態によらずその日に完了したものとする |
+| GitHub | `gh search prs --author @me --merged-at "<範囲>"` と `gh search prs --reviewed-by @me --merged-at "<範囲>"` 。範囲は `YYYY-MM-DDT00:00:00+09:00..<翌日>T00:00:00+09:00` と JST で書く。日付だけでは UTC の 1 日になる | マージした PR、レビューした PR のマージ。PR を添付した Issue は、Linear の状態によらずその日に完了したものとする |
 | git | `~/.claude` などのリポジトリの `git log` | 追加した Skill |
 
 一覧は、他のメンバーから見てアウトプットを確認できる粒度にまとめ、多くても 5 件ほどにする。会議そのものは項目にせず、会議の準備は項目にしてよい。各項目は `[クライアント] 内容` の形で書き、最後の項目は「各種RV」にする。
@@ -91,7 +91,7 @@ Do³ の問いと、それぞれへの返信の形を次に示す。材料の取
 
 今日の予定の候補は、担当の Issue と、前営業日に届いた依頼から作る。
 
-手順 3 では、Linear の `list_issues` を `assignee: me` で、 `state` を `started` と `unstarted` にして取り、[Done](#done) で完了とみなすものを除く。残りを期日、優先度、マイルストーン、その日の会議に向けた準備かどうかで並べる。前営業日に届いた依頼は [Requests](#requests) の 1〜7 で案にまとめる。次の 3 つを 1 つの返信で示す。
+手順 3 では、Linear の `list_issues` を `assignee: me` で、 `state` を `started` と `unstarted` にして取り、1 件ずつ `get_issue` で読んで [Done](#done) で完了とみなすものを除く。残りを期日、優先度、マイルストーン、その日の会議に向けた準備かどうかで並べる。前営業日に届いた依頼は [Requests](#requests) の 1〜7 で案にまとめる。次の 3 つを 1 つの返信で示す。
 
 - Issue の候補の表（Issue、状態、期日、優先度、並べた理由）
 - PR がマージ済みで完了とみなして除いた Issue（Linear の状態を Done にするかは本人が決める）
@@ -378,6 +378,7 @@ Do³ はここまでの内容をまとめて「このまとめ内容で合って
 | :-- | :-- |
 | Ego Lite がログイン画面（URL に `signin` を含む）に移った | `handOff()` してから、Ego Lite で Slack にログインする |
 | 3 で入力欄に下書きが出ない | Slack の「下書きと送信済み」で下書きを確かめて送る |
+| 4 のクリックが権限の確認で拒まれた | Slack のスレッドで下書きを送る |
 | 5 で返信が届いていない | Slack のスレッドを確かめ、届いていなければ送る |
 
 ## Report
