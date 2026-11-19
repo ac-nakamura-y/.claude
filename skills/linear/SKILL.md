@@ -1,11 +1,11 @@
 ---
 name: linear
-description: Creates Linear issues using marutto-ops, project [FDE] 制作プロセス改善, and status Triage as defaults. Use when the user asks to create Linear issues, file tasks in Linear, or split work into multiple issues.
+description: Creates Linear issues using marutto-ops, project [FDE] 制作プロセス改善, and status Triage as defaults, and moves an issue to In Progress when work on it starts. Use when the user asks to create Linear issues, file tasks in Linear, or split work into multiple issues, and whenever a session starts working on a Linear issue.
 ---
 
 # Linear
 
-会話・ドキュメント・URL・要件メモなど任意の情報源から Linear Issue を作成する。作成前に team と project の存在を確認し、重複がないことを検証してから `save_issue` を呼び出す。
+会話・ドキュメント・URL・要件メモなど任意の情報源から Linear Issue を作成する。作成前に team と project の存在を確認し、重複がないことを検証してから `save_issue` を呼び出す。Issue に取りかかるときは、その Issue を In Progress にする（[Start](#start)）。
 
 ## Tools
 
@@ -26,7 +26,7 @@ Linear MCP の `save_issue` `get_team` `get_project` `list_issue_statuses` `list
 | parentId | 親 Issue がある場合のみ |
 | labels | null |
 
-priority の数値対応は `urgent=1` `high=2` `medium=3` `low=4` とする。team・project・priority・assignee・dueDate・labels はユーザーが明示した場合のみ上書きする。status はユーザー指定の有無にかかわらず常に `Triage` とし、Backlog や Todo には変更しない。
+priority の数値対応は `urgent=1` `high=2` `medium=3` `low=4` とする。team・project・priority・assignee・dueDate・labels はユーザーが明示した場合のみ上書きする。作成時の status はユーザー指定の有無にかかわらず常に `Triage` とし、Backlog や Todo にはしない。
 
 ## Workflow
 
@@ -97,9 +97,16 @@ description: |
 
 作成後、title・Linear URL・team・project・priority・status を表形式で返す。テンプレートは [reference.md](reference.md) を参照する。
 
+## Start
+
+セッションが Issue の作業に取りかかるときは、作業の最初に、確認なしで Issue を `In Progress` にする。In Progress の Issue は、ほかのセッションや定期タスク do3-morning が「すでに誰かが取り組んでいる」と判断する印になる。
+
+1. `get_issue` で状態を読む
+2. 状態の種類が `triage` ・ `backlog` ・ `unstarted` のときだけ、 `save_issue({ id: "<Issue の ID>", state: "In Progress" })` を呼ぶ。 `started` （In Progress・In Review・In Customer）、 `completed` 、 `canceled` の Issue は変えない
+
 ## Rules
 
-status は常に Triage とし、デフォルトパラメータは明示指定がない限り変更しない。description には実務に必要な情報のみを記載する。同一テーマの `[親]` Issue がある場合は parentId に設定する。既存 Issue と重複する場合は新規作成しない。
+作成時の status は常に Triage とし、デフォルトパラメータは明示指定がない限り変更しない。取りかかった Issue は [Start](#start) のとおり In Progress にし、それ以外の状態の変更はユーザーの指示があるときだけ行う。description には実務に必要な情報のみを記載する。同一テーマの `[親]` Issue がある場合は parentId に設定する。既存 Issue と重複する場合は新規作成しない。
 
 ## References
 

@@ -39,7 +39,7 @@
 | `git-flow` | このリポジトリ | ブランチ・worktree・Pull Request の運用 |
 | `imagegen` | このリポジトリ | 画像の生成と編集 |
 | `jobcan-expenses` | このリポジトリ | ジョブカンの小口経費精算に通勤費を入力する |
-| `linear` | このリポジトリ | Linear Issue の起票 |
+| `linear` | このリポジトリ | Linear Issue の起票と、取りかかった Issue の In Progress への更新 |
 | `manage` | このリポジトリ | メインエージェントを管理役に徹させ、実務をサブエージェントへ任せる |
 | `markdown` | このリポジトリ | Markdown とそれに準じた記法 |
 | `pr-stats` | このリポジトリ | Pull Request の週次集計 |
