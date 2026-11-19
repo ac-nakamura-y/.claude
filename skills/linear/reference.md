@@ -32,7 +32,7 @@ description: |
 | assignee | null | ユーザー明示時のみ |
 | dueDate | null | ユーザー明示時のみ |
 | priority | 3 | ユーザー明示時のみ |
-| status | Triage | 上書き不可 |
+| status | Triage | 作成時は上書き不可。取りかかったら In Progress |
 | parentId | なし | 親 Issue が文脈上明らかな場合 |
 | labels | null | ユーザー明示時のみ |
 
