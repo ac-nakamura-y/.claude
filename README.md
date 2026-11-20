@@ -15,7 +15,7 @@
 ├── plugins/
 │   └── agent-config/           # サブモジュール → activecore-org/agent-config
 ├── skills/                     # Skill 群
-├── scheduled-tasks/            # Claude Desktop の定期タスクのプロンプト（auto-review・do3-morning・fde-dashboard）
+├── scheduled-tasks/            # Claude Desktop の定期タスクのプロンプト（auto-review・do3・fde-dashboard）
 ├── scripts/
 │   ├── auto-resume/            # 使用量の上限で止まった会話を、解除の時刻に自動で再開するフックの実行ファイル
 │   ├── auto-review/            # auto-review のレビューのセッションを、Approve の返信を送信した後に閉じるフックの実行ファイル

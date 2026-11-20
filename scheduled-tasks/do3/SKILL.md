@@ -1,5 +1,5 @@
 ---
-name: do3-morning
+name: do3
 description: Triages the previous business day's requests into Linear issues, then writes the replies to the Do³ daily session one question at a time and sends them to Slack through Ego Lite. For today's tasks, fits them into free calendar time, adds the work time to the calendar, and starts a Claude Code background session for each non-review task. Asks the user about the triage, today's tasks, and the judgment scene.
 ---
 
@@ -240,7 +240,7 @@ description は出典の引用から始め、Issue から依頼の原文へ辿�
 次をこのまま書き、 `<>` を埋める。スレッドの permalink は、検索結果の `Permalink` から `?` 以降を除いたものである。Issue のない項目は、Issue の行と手順の 3 を除き、手順の番号を詰める。
 
 ```markdown
-<名前> に取り組む。このセッションは、利用者が Do³ のスレッドで今日の予定に挙げた作業として、定期タスク do3-morning が始めた。
+<名前> に取り組む。このセッションは、利用者が Do³ のスレッドで今日の予定に挙げた作業として、定期タスク do3 が始めた。
 
 - Do³ のスレッド：<スレッドの permalink>
 - Issue：<Issue の URL>
