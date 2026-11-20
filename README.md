@@ -18,7 +18,7 @@
 ├── scheduled-tasks/            # Claude Desktop の定期タスクのプロンプト（auto-review・do3・fde-dashboard）
 ├── scripts/
 │   ├── auto-resume/            # 使用量の上限で止まった会話を、解除の時刻に自動で再開するフックの実行ファイル
-│   ├── auto-review/            # auto-review のレビューのセッションを、Approve の返信を送信した後に閉じるフックの実行ファイル
+│   ├── auto-review/            # Auto Review が、レビューの Issue を Done にしたレビューのセッションを閉じる実行ファイル
 │   ├── fable-advice/           # manage Skill でサブエージェントが報告を返した後に Fable へ問いかけを求めるフックの実行ファイル
 │   ├── language-drift/         # 応答の言語のずれを見つけて言い直させるフックの実行ファイル
 │   ├── report-gaps/            # 報告に欠けた前提・結論を見つけて言い直させるフックの実行ファイル
