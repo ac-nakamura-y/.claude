@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// auto-review が始めたレビューのセッションで、本人が Approve の返信を「送信する」と答えたら、
+// auto-review が始めたレビューのセッションが返信を書き込み、レビューの Issue を Done にしたら、
 // そのターンが終わるのを待ってセッションを claude rm で閉じる。worktree とそのブランチも一緒に消える。
 // Stop フックから標準入力で呼ばれ、待つ処理は切り離した子に任せてすぐ戻る。
 import { spawn, spawnSync } from "node:child_process";
@@ -8,9 +8,9 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-// auto-review の SKILL.md が指示のファイルに書く問いと答え。どちらかを変えるときは両方をそろえる。
-const QUESTION = "Approve の返信を送信しますか？";
-const SEND = "送信する";
+// auto-review の SKILL.md が決めるセッションの名前の末尾。どちらかを変えるときは両方をそろえる。
+const NAME_SUFFIX = " のレビュー";
+const DONE = "Done";
 
 const CLAUDE_HOME = process.env.CLAUDE_CONFIG_DIR ?? path.join(os.homedir(), ".claude");
 const JOBS = path.join(CLAUDE_HOME, "jobs");
@@ -49,23 +49,31 @@ async function close(id) {
   }
 }
 
-// フックの処理：背景セッションで、最後の送信の問いへの答えが「送信する」なら、閉じる子を切り離して始める。
+// フックの処理：auto-review の背景セッションで、レビューの Issue を Done にした呼び出しが成功していれば、閉じる子を切り離して始める。
+// 書き込みの最後の手順が Done なので、判定や依頼の場所によらず、これを書き込みを終えた印とする。
 // 別のフックの言い直しで重なった Stop（ stop_hook_active ）では、最初の Stop が始めた子に任せる。
 function detect() {
   const input = readJson(0);
   if (input.stop_hook_active) process.exit(0);
   const id = input.session_id.slice(0, 8);
   const stateFile = path.join(JOBS, id, "state.json");
-  if (!fs.existsSync(stateFile) || readJson(stateFile).sessionId !== input.session_id) process.exit(0);
+  if (!fs.existsSync(stateFile)) process.exit(0);
+  const state = readJson(stateFile);
+  if (state.sessionId !== input.session_id || !state.name?.endsWith(NAME_SUFFIX)) process.exit(0);
 
-  const answer = fs
+  const contents = fs
     .readFileSync(input.transcript_path, "utf8")
     .split("\n")
     .filter(Boolean)
-    .map((line) => JSON.parse(line))
-    .findLast((row) => row.toolUseResult?.answers?.[QUESTION] !== undefined)
-    ?.toolUseResult.answers[QUESTION];
-  if (answer !== SEND) process.exit(0);
+    .flatMap((line) => JSON.parse(line).message?.content)
+    .filter((content) => typeof content === "object" && content !== null);
+  const doneCalls = new Set(
+    contents
+      .filter((c) => c.type === "tool_use" && c.name?.endsWith("save_issue") && c.input?.state === DONE)
+      .map((c) => c.id),
+  );
+  const done = contents.some((c) => c.type === "tool_result" && doneCalls.has(c.tool_use_id) && !c.is_error);
+  if (!done) process.exit(0);
   spawn(process.execPath, [fileURLToPath(import.meta.url), "--close", id], { detached: true, stdio: "ignore" }).unref();
 }
 
