@@ -1,13 +1,13 @@
 ---
 name: session-kickoff
-description: Starts a Claude Code background session (claude --bg) with Remote Control for one task, pins it so it keeps waiting for the user instead of being stopped, and unpins it once the caller says it is no longer needed. Used by the scheduled tasks auto-review and do3-morning. Use when a scheduled task or skill hands a task to its own session that the user opens from the Claude Desktop sidebar, claude.ai/code, or a phone.
+description: Starts a Claude Code background session (claude --bg) with Remote Control for one task, pins it so it keeps waiting for the user instead of being stopped, and unpins it once the caller says it is no longer needed. Used by the scheduled tasks auto-review and do3. Use when a scheduled task or skill hands a task to its own session that the user opens from the Claude Desktop sidebar, claude.ai/code, or a phone.
 ---
 
 # Session Kickoff
 
 ## Overview
 
-作業 1 件ごとに Claude Code の背景セッション（ `claude --bg` ）を Remote Control 付きで始め、本人の返事を待つ間も止まらないよう固定し、要らなくなったら固定を外す。呼び出し側（定期タスク Auto Review と do3-morning）は、セッションの名前、場所のフォルダ、指示のファイル、追加の引数、固定するかどうか、固定を外す条件を決める。この Skill は、始め方と固定の仕組みを受け持つ。
+作業 1 件ごとに Claude Code の背景セッション（ `claude --bg` ）を Remote Control 付きで始め、本人の返事を待つ間も止まらないよう固定し、要らなくなったら固定を外す。呼び出し側（定期タスク Auto Review と do3）は、セッションの名前、場所のフォルダ、指示のファイル、追加の引数、固定するかどうか、固定を外す条件を決める。この Skill は、始め方と固定の仕組みを受け持つ。
 
 背景セッションを動かす常駐のプロセスは、Remote Control 付きのセッションが入力を待ったまま `8` 時間たつと、そのセッションを止める。Remote Control のないセッションは `1` 時間で止める。止まったセッションは Remote Control が切れ、サイドバーや claude.ai から続けられない。固定したセッションは止められない。ただしメモリが足りないときは、固定したセッションも最後に止められる。
 
