@@ -43,7 +43,7 @@ description: Writes the replies to the Do³ daily session and sends them to Slac
 Issue が完了したかは、次のどちらかに当たるかで決める。PR がマージされた Issue は、Linear の状態が残っていても完了とみなす。Linear の状態は変えない。
 
 1. 状態の種類（ `statusType` ）が `completed` か `canceled` である
-2. `get_issue` の `attachments` に GitHub の PR（URL が `https://github.com/<owner>/<repo>/pull/<番号>` のもの）が 1 本以上あり、どれも開いておらず、1 本以上がマージされている。定期タスク auto-review が作るレビューの Issue（title が `<リポジトリ名>#<PR の番号> をレビューする：` で始まるもの）は、PR がマージされずに閉じられていても完了とする
+2. `get_issue` の `attachments` に GitHub の PR（URL が `https://github.com/<owner>/<repo>/pull/<番号>` のもの）が 1 本以上あり、どれも開いておらず、1 本以上がマージされている。定期タスク Auto Review が作るレビューの Issue（title が `<リポジトリ名>#<PR の番号> をレビューする：` で始まるもの）は、PR がマージされずに閉じられていても完了とする
 
 PR の状態は PR ごとに `gh pr view <PR の URL> --json state,mergedAt` で読む。 `state` が `OPEN` なら開いている、 `MERGED` ならマージ済み、 `CLOSED` ならマージされずに閉じられている。PR が 1 本もない Issue は 1 だけで決める。 `list_issues` の結果には `attachments` が出ないため、判定する Issue はすべて `get_issue` で読む。
 
@@ -138,7 +138,7 @@ include_context: false
 | 予定の操作 | 会議の設定、招待の送付、日程の調整 |
 | その場で終わる作業 | スレッドで返せば済む回答、返事を求められていない共有への目通し、権限の付与、リンクの転送 |
 | 済んでいる作業 | 本人が対応済みと返信した依頼、会議中に済ませた作業、期限が過ぎた当日中の作業 |
-| PR のレビュー | 定期タスク auto-review が PR ごとに Issue を作る |
+| PR のレビュー | 定期タスク Auto Review が PR ごとに Issue を作る |
 | 終わりのない作業 | 会議への出席、毎回の役割 |
 | 中身を読み取れない作業 | 何をするかが議事録に書かれていない宿題 |
 
@@ -207,7 +207,7 @@ description は出典の引用から始め、Issue から依頼の原文へ辿�
 
 | 除く項目 | 理由 |
 | :-- | :-- |
-| 「各種RV」と、タイトルに「レビュー」「RV」を含む項目 | レビューは本人が行い、PR のレビューのセッションは定期タスク auto-review が始める |
+| 「各種RV」と、タイトルに「レビュー」「RV」を含む項目 | レビューは本人が行い、PR のレビューのセッションは定期タスク Auto Review が始める |
 | `claude agents --json --all` で、 `kind` が `background` で `name` が Issue の ID か項目の名前を含むセッションがある項目 | 同じ作業のセッションがすでにある |
 
 始める項目ごとに、セッションを始めるフォルダを決める。Issue の項目は `get_issue` で説明・添付・プロジェクトを読み、そこに出てくるリポジトリや PR を手がかりに、 `~/Documents` の直下、 `~/batb` 、 `~/.claude` にある Git のリポジトリから選ぶ。それぞれのリポジトリ名は `git -C <フォルダ> remote get-url origin` で分かる。どのリポジトリにも当てはまらない作業（スライドや資料づくりなど）は「このコンピューター」で始める。

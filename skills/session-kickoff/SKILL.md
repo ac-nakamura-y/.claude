@@ -7,7 +7,7 @@ description: Starts a Claude Code background session (claude --bg) with Remote C
 
 ## Overview
 
-作業 1 件ごとに Claude Code の背景セッション（ `claude --bg` ）を Remote Control 付きで始め、本人の返事を待つ間も止まらないよう固定し、要らなくなったら固定を外す。呼び出し側（定期タスク auto-review と do3-morning）は、セッションの名前、場所のフォルダ、指示のファイル、追加の引数、固定するかどうか、固定を外す条件を決める。この Skill は、始め方と固定の仕組みを受け持つ。
+作業 1 件ごとに Claude Code の背景セッション（ `claude --bg` ）を Remote Control 付きで始め、本人の返事を待つ間も止まらないよう固定し、要らなくなったら固定を外す。呼び出し側（定期タスク Auto Review と do3-morning）は、セッションの名前、場所のフォルダ、指示のファイル、追加の引数、固定するかどうか、固定を外す条件を決める。この Skill は、始め方と固定の仕組みを受け持つ。
 
 背景セッションを動かす常駐のプロセスは、Remote Control 付きのセッションが入力を待ったまま `8` 時間たつと、そのセッションを止める。Remote Control のないセッションは `1` 時間で止める。止まったセッションは Remote Control が切れ、サイドバーや claude.ai から続けられない。固定したセッションは止められない。ただしメモリが足りないときは、固定したセッションも最後に止められる。
 
