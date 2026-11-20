@@ -10,7 +10,7 @@
 .
 ├── .github/
 │   └── dependabot.yml          # サブモジュールの更新 Pull Request を毎週立てる
-├── skills/                     # Skill 群
+├── skills/                     # Skill 群と、このリポジトリで作るプラグイン
 ├── scripts/
 │   ├── auto-resume/            # 使用量の上限で止まった会話を、解除の時刻に自動で再開するフックの実行ファイル
 │   ├── fable-advice/           # manage Skill でサブエージェントが報告を返した後に Fable へ問いかけを求めるフックの実行ファイル
@@ -24,12 +24,11 @@
 
 ## Skills
 
-`skills/` の各ディレクトリが 1 つの Skill に対応する。`.claude-plugin/` を持つディレクトリは、Claude Code がプラグインとして読み込む。外部で配布されている Skill はサブモジュールとして取り込み、それ以外はこのリポジトリで直接管理する。Claude のアプリや Orca・Ego などのツールが自分で配置して更新する Skill は `.gitignore` で除外し、バージョン管理しない。
+`skills/` の各ディレクトリは、1 つの Skill か、このリポジトリで作るプラグインに対応する。プラグインは Plugins 節で扱う。外部で配布されている Skill はサブモジュールとして取り込み、それ以外はこのリポジトリで直接管理する。Claude のアプリや Orca・Ego などのツールが自分で配置して更新する Skill は `.gitignore` で除外し、バージョン管理しない。
 
 | Skill | 取得元 | 役割 |
 | :-- | :-- | :-- |
 | `humanizer` | blader/humanizer | AI が書いたような文章を書き手の言葉へ直す |
-| `idle-compact` | このリポジトリ | 最後のターンからプロンプトキャッシュの有効期間の 90%（54 分）が過ぎたら会話を圧縮するプラグイン |
 | `git-flow` | このリポジトリ | ブランチ・worktree・Pull Request の運用 |
 | `imagegen` | このリポジトリ | 画像の生成と編集 |
 | `manage` | このリポジトリ | メインエージェントを管理役に徹させ、実務をサブエージェントへ任せる |
@@ -38,7 +37,13 @@
 
 ## Plugins
 
-プラグインは `settings.json` の `enabledPlugins` と `extraKnownMarketplaces` で宣言し、実体は Claude Code が `plugins/` へ取得する。したがって `plugins/` はバージョン管理しない。
+プラグインは取得元によって管理の仕方が分かれる。外部のプラグインは `settings.json` の `enabledPlugins` と `extraKnownMarketplaces` で宣言し、実体は Claude Code が `plugins/` へ取得する。したがって `plugins/` はバージョン管理しない。
+
+このリポジトリで作るプラグインは `skills/<name>/` に `.claude-plugin/` を置いて管理する。Claude Code はこれを `settings.json` での宣言なしに読み込む。
+
+| Plugin | 役割 |
+| :-- | :-- |
+| `idle-compact` | 最後のターンから `54` 分（プロンプトキャッシュの有効期間 `1` 時間の `90%` ）が過ぎたとき、会話が `10` 万トークン以上あれば圧縮する |
 
 ## Runtime
 
