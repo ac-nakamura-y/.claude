@@ -12,6 +12,7 @@
 !/settings.json
 !/skills/
 !/plugins/
+/plugins/*
 !/plugins/agent-config
 !/scheduled-tasks/
 /scheduled-tasks/*
@@ -19,12 +20,6 @@
 /scheduled-tasks/fde-dashboard/*.html
 !/scheduled-tasks/do3/
 !/scheduled-tasks/auto-review/
-plugins/cache/
-plugins/known_marketplaces.json
-plugins/installed_plugins.json
-plugins/marketplaces/
-plugins/.last_inuse_sweep
-plugins/.install-manifests/
 
 # macOS
 .DS_Store
