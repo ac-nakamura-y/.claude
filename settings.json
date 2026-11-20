@@ -83,12 +83,7 @@
   },
   "outputStyle": "Concise",
   "cleanupPeriodDays": 90,
-  "effortLevel": "xhigh",
-  "modelSettings": {
-    "claude-opus-5": {
-      "effortLevel": "high"
-    }
-  },
+  "idleCompaction": false,
   "advisorModel": "fable",
   "theme": "auto",
   "inputNeededNotifEnabled": true,

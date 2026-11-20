@@ -14,7 +14,7 @@
 │       └── sync-upstream.yml   # upstream/main を毎週月曜 9:00 JST に main へ取り込む
 ├── plugins/
 │   └── agent-config/           # サブモジュール → activecore-org/agent-config
-├── skills/                     # Skill 群
+├── skills/                     # Skill 群と、このリポジトリで作るプラグイン
 ├── scheduled-tasks/            # Claude Desktop の定期タスクのプロンプト（auto-review・do3・fde-dashboard）
 ├── scripts/
 │   ├── auto-resume/            # 使用量の上限で止まった会話を、解除の時刻に自動で再開するフックの実行ファイル
@@ -31,7 +31,7 @@
 
 ## Skills
 
-`skills/` の各ディレクトリが 1 つの Skill に対応する。外部で配布されている Skill はサブモジュールとして取り込み、それ以外はこのリポジトリで直接管理する。Claude のアプリや Orca・Ego などのツールが自分で配置して更新する Skill は `.gitignore` で除外し、バージョン管理しない。
+`skills/` の各ディレクトリは、1 つの Skill か、このリポジトリで作るプラグインに対応する。プラグインは Plugins 節で扱う。外部で配布されている Skill はサブモジュールとして取り込み、それ以外はこのリポジトリで直接管理する。Claude のアプリや Orca・Ego などのツールが自分で配置して更新する Skill は `.gitignore` で除外し、バージョン管理しない。
 
 | Skill | 取得元 | 役割 |
 | :-- | :-- | :-- |
@@ -48,11 +48,17 @@
 
 ## Plugins
 
-プラグインは `settings.json` の `enabledPlugins` と `extraKnownMarketplaces` で宣言し、実体は Claude Code が `plugins/` へ取得する。例外は activecore 社内のプラグイン群 `agent-config` で、こちらはサブモジュールとして追跡し、初回 clone 後に初期化する。
+プラグインは取得元によって管理の仕方が分かれる。外部のプラグインは `settings.json` の `enabledPlugins` と `extraKnownMarketplaces` で宣言し、実体は Claude Code が `plugins/` へ取得する。activecore 社内のプラグイン群 `agent-config` はサブモジュールとして追跡し、初回 clone 後に初期化する。
 
 ```shell
 git submodule update --init plugins/agent-config
 ```
+
+このリポジトリで作るプラグインは `skills/<name>/` に `.claude-plugin/` を置いて管理する。Claude Code はこれを `settings.json` での宣言なしに読み込む。
+
+| Plugin | 役割 |
+| :-- | :-- |
+| `idle-compact` | 最後のターンから `54` 分（プロンプトキャッシュの有効期間 `1` 時間の `90%` ）が過ぎたとき、会話が `10` 万トークン以上あれば圧縮する |
 
 ### Claude Code
 
