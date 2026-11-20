@@ -113,7 +113,7 @@ node ~/.claude/skills/demo-video/scripts/record.mjs scenario.mjs --out demo.webm
 | `note(文)` | 実測値や気づきを右下に出す。読み切れるよう 6 秒程度出す |
 | ローカルの HTML | `file://` で開ける |
 
-ブラウザの操作そのもの（調べる、入力する、利用者のログインで作業する）は ego-browser を使う。この Skill が Playwright を使うのは、動画を書き出すためである。PR の受け入れ確認を PR の説明に貼るまでの進め方は `fde:oat-recording` に従い、録画はこの Skill の `record.mjs` で行う（`playwright-cli` の `screencast` は下端が欠ける）。
+PR の受け入れ確認を PR の説明に貼るまでの進め方は `fde:oat-recording` に従い、録画はこの Skill の `record.mjs` で行う（`playwright-cli` の `screencast` は下端が欠ける）。
 
 ## コマで確認
 
@@ -139,4 +139,4 @@ node ~/.claude/skills/demo-video/scripts/frames.mjs demo.webm frames 3 15 40
 | `file:` が開けない | `playwright-cli` の制限。`record.mjs` なら開ける |
 | コマを書き出すと全部先頭の絵になる | 録画にシーク用の目次が無い。`frames.mjs` を使う |
 | ブラウザを起動できない | Playwright の版に合うブラウザが無い。対象プロジェクトで `npx playwright install chromium` |
-| 動画が QuickTime で開けない | `.webm` は Chrome や Slack で再生できる。mp4 が要るときだけ変換する |
+| 動画が QuickTime で開けない | `.webm` はブラウザや Slack で再生できる。mp4 が要るときだけ変換する |
