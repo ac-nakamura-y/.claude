@@ -215,7 +215,7 @@ cd ~/.claude/scheduled-tasks/fde-dashboard && node refresh.js <ASOF> <OUT> <OUT>
 
 | 出力 | 中身 |
 | :-- | :-- |
-| `refresh.js` の前半 | 変更の記録（状態・期間・担当の変化、新規や完了のプロジェクト、月の切り替え）。なければ「変更の記録なし」 |
+| `refresh.js` の前半 | 変更の記録（状態・期間・担当の変化、新規・完了・取り消しのプロジェクト、取り消しでミッションとのつながりから外した行、月の切り替え）。なければ「変更の記録なし」 |
 | `extras.js due` | 期限の Issue があるプロジェクトと件数。なければ「期限の Issue なし」 |
 | `rebuild.js` の最後 | `ok 58074 bytes; 32 projects; 7 members; week 11/16 週（Cycle 95）` の形。 `week` の後ろの値を Register と Report で使う |
 

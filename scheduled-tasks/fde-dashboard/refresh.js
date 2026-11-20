@@ -36,9 +36,9 @@ const J = v => JSON.stringify(v);
 const known = new Map(PROJECTS.map(p => [p.id, p]));
 const linIds = new Set(Object.values(LIN).map(l => l.uuid));
 for (const p of PROJECTS) if (!linIds.has(p.id)) throw new Error("Initiative から外れたプロジェクト " + p.key + "（扱いを決めてから進める）");
-const next = [];
+const next = [], canceled = new Map();
 for (const [key, l] of Object.entries(LIN)) {
-  if (l.state === "canceled") { if (known.has(l.uuid)) log.push("取り消し " + key + " " + l.name); continue; }
+  if (l.state === "canceled") { if (known.has(l.uuid)) { log.push("取り消し " + key + " " + l.name); canceled.set(l.uuid, key); } continue; }
   if (!STATES.has(l.state)) throw new Error(key + ": 想定外の状態 " + l.state);
   let p = known.get(l.uuid);
   if (!p) { p = { id: l.uuid, key }; log.push("新規 " + key + " " + l.name); }
@@ -79,6 +79,14 @@ if (DAYS[0].split("/")[0] !== CAL.days[0].split("/")[0]) {
   DAYS = CAL.days; WEEKLY = CAL.weekly; for (const m of DATA) { m.cov = ""; m.wk = ""; }
 } else if (J(DAYS) !== J(CAL.days) || J(WEEKLY) !== J(CAL.weekly)) throw new Error("DAYS・WEEKLY が days.js の暦と合わない");
 if (!DAYS.includes(+asOf.slice(5, 7) + "/" + +asOf.slice(8))) throw new Error(asOf + " は営業日でない");
+
+// ---- ミッションとのつながり：取り消したプロジェクトの行は外す。ほかに一覧にないプロジェクトを指す行があれば止める
+const nextIds = new Set(next.map(p => p.id));
+for (const m of DATA) {
+  const gone = m.ws.filter(w => canceled.has(w.p));
+  if (gone.length) { log.push(m.name + " ミッションとのつながりから外す（取り消し）: " + gone.map(w => canceled.get(w.p)).join(" ")); m.ws = m.ws.filter(w => !canceled.has(w.p)); }
+  for (const w of m.ws) if (w.p !== null && !nextIds.has(w.p)) throw new Error(m.id + ": ミッションとのつながりが一覧にないプロジェクトを指す " + w.p);
+}
 
 // ---- メンバー：今週のプロジェクトはカードにあるものだけ残す。Do³ を当月の続きとして入れる
 const fromIdx = DAYS.indexOf(DO3.from); if (fromIdx < 0) throw new Error("Do³ の開始日が当月の営業日にない " + DO3.from);
