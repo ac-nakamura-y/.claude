@@ -1,6 +1,6 @@
 # はじめかた
 
-自分に届いた PR のレビュー依頼を、Claude Desktop の定期タスク auto-review で 15 分ごとに拾い、レビューの Issue とレビューの背景セッションを用意するための準備。最初に 1 度だけ行う。
+自分に届いた PR のレビュー依頼を、Claude Desktop の定期タスク Auto Review で 15 分ごとに拾い、レビューの Issue とレビューの背景セッションを用意するための準備。最初に 1 度だけ行う。
 
 やることの中身は [SKILL.md](SKILL.md) にある。ここは準備だけを扱う。
 
@@ -30,11 +30,12 @@ printf 'slack\t%s.000000\nlinear\t%s\n' "$now" "$(date -u -r "$now" +%Y-%m-%dT%H
 
 ## 3. 定期タスク
 
-Claude Desktop の Code タブで、定期タスク auto-review を次の値で登録する。アプリはプロンプトを `~/.claude/scheduled-tasks/auto-review/SKILL.md` に置く。これはこのリポジトリの [SKILL.md](SKILL.md) と同じファイルなので、プロンプトには SKILL.md の本文をそのまま使う。
+Claude Desktop の Code タブで、定期タスク Auto Review を次の値で登録する。アプリはプロンプトを `~/.claude/scheduled-tasks/auto-review/SKILL.md` に置く。これはこのリポジトリの [SKILL.md](SKILL.md) と同じファイルなので、プロンプトには SKILL.md の本文をそのまま使う。
 
 | 項目 | 値 |
 | :-- | :-- |
 | 名前 | `auto-review` |
+| 表示名 | `Auto Review` |
 | 繰り返し | `*/15 9-21 * * 1-5` |
 | 権限のモード | `auto`。確認なしで `gh` を読み、背景セッションを始めるため |
 
