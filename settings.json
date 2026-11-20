@@ -45,9 +45,10 @@
     "eli5@claude-community": true,
     "fde@activecore": true,
     "ops@activecore": true,
-    "ac-monitor@activecore": true,
     "logistics@activecore": true,
-    "batb@batb": true
+    "batb@batb": true,
+    "ac-monitor@activecore": true,
+    "shiseido@activecore": true
   },
   "extraKnownMarketplaces": {
     "yjn279": {
