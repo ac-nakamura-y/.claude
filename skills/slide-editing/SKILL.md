@@ -16,7 +16,7 @@ description: Rules for editing an existing slide deck (.pptx, including .pptx fi
 | 形式 | コピーの方法 |
 | :-- | :-- |
 | .pptx | ファイルを複製し、複製を開いて編集する |
-| Google ドライブ上の .pptx | Drive MCP の `copy_file` でコピーを作り、Google Drive for desktop の同期フォルダで編集する |
+| Google ドライブ上の .pptx | Google Drive for desktop の同期フォルダ経由でコピーを編集する（Google Drive 節） |
 | Google スライド | Google ドライブでファイルをコピーし、コピーを編集する |
 
 ### Google Drive
