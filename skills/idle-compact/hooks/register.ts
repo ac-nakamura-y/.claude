@@ -14,8 +14,8 @@ async function compactIfLarge($: EngineInterface): Promise<void> {
       return
     }
     if (tokens < MIN_TOKENS) return
-    const result = await $.session.compact()
-    if (result.skip !== undefined) $.ui.log(`idle-compact: skipped: ${result.skip}`)
+    // Run /compact as a command so it works in headless sessions such as Claude Desktop.
+    await $.command.run({ command: 'compact' })
   } catch (error) {
     $.ui.log(`idle-compact: failed: ${String(error)}`)
   }
