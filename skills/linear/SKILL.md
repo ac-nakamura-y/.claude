@@ -1,15 +1,15 @@
 ---
 name: linear
-description: Creates Linear issues using marutto-ops, project [FDE] 制作プロセス改善, and status Triage as defaults, and moves an issue to In Progress when work on it starts. Use when the user asks to create Linear issues, file tasks in Linear, or split work into multiple issues, and whenever a session starts working on a Linear issue.
+description: Creates Linear issues in marutto-ops with status Todo, placing each in the fitting project under the [FDE] initiative that the user is a member of, and moves an issue to In Progress when work on it starts. Use when the user asks to create Linear issues, file tasks in Linear, or split work into multiple issues, and whenever a session starts working on a Linear issue.
 ---
 
 # Linear
 
-会話・ドキュメント・URL・要件メモなど任意の情報源から Linear Issue を作成する。作成前に team と project の存在を確認し、重複がないことを検証してから `save_issue` を呼び出す。Issue に取りかかるときは、その Issue を In Progress にする（[Start](#start)）。
+会話・ドキュメント・URL・要件メモなど任意の情報源から Linear Issue を作成する。作成前に team と project を解決し、重複がないことを検証してから `save_issue` を呼び出す。Issue に取りかかるときは、その Issue を In Progress にする（[Start](#start)）。
 
 ## Tools
 
-Linear MCP の `save_issue` `get_team` `get_project` `list_issue_statuses` `list_issues` `get_issue` を使う。
+Linear MCP の `save_issue` `get_team` `list_projects` `list_issue_statuses` `list_issues` `get_issue` を使う。
 
 ## Defaults
 
@@ -18,15 +18,15 @@ Linear MCP の `save_issue` `get_team` `get_project` `list_issue_statuses` `list
 | Field | Default |
 | :-- | :-- |
 | team | `marutto-ops` |
-| project | `[FDE] 制作プロセス改善` |
+| project | [FDE] イニシアチブ配下で自身がメンバーのプロジェクトから、内容に合うもの（[Resolution](#resolution)） |
 | assignee | null |
 | dueDate | null |
 | priority | medium（Linear `3` ） |
-| status | `Triage` |
+| status | `Todo` |
 | parentId | 親 Issue がある場合のみ |
 | labels | null |
 
-priority の数値対応は `urgent=1` `high=2` `medium=3` `low=4` とする。team・project・priority・assignee・dueDate・labels はユーザーが明示した場合のみ上書きする。作成時の status はユーザー指定の有無にかかわらず常に `Triage` とし、Backlog や Todo にはしない。
+priority の数値対応は `urgent=1` `high=2` `medium=3` `low=4` とする。ユーザーが明示した値はデフォルトより優先する。
 
 ## Workflow
 
@@ -46,7 +46,7 @@ flowchart LR
 - [ ] title・description・件数を確定する
 - [ ] team・project・親 Issue を解決する
 - [ ] 重複 Issue がないことを確認する
-- [ ] `save_issue` で作成する（ `state: Triage` ）
+- [ ] `save_issue` で作成する（ `state: Todo` ）
 - [ ] 必要なら `blockedBy` / `relatedTo` を設定する
 - [ ] 作成結果を一覧で報告する
 
@@ -56,11 +56,11 @@ flowchart LR
 
 ### Resolution
 
-作成前に MCP で team と project の存在を確認する。親 Issue 候補がある場合は `list_issues` または `get_issue` で特定し `parentId` を設定する。
+作成前に MCP で team と project を解決する。project は [FDE] イニシアチブ配下で自身がメンバーのプロジェクトを一覧し、Completed と Canceled を除いた中から、Issue の内容に最も合うものを選ぶ。合うものがない、または候補が絞りきれないときは、作成せずにユーザーへ確認する。親 Issue 候補がある場合は `list_issues` または `get_issue` で特定し `parentId` を設定する。
 
 ```text
 get_team({ query: "marutto-ops" })
-get_project({ query: "[FDE] 制作プロセス改善" })
+list_projects({ initiative: "[FDE]", member: "me", fields: ["name", "status", "summary"] })
 list_issue_statuses({ team: "marutto-ops" })
 ```
 
@@ -75,8 +75,8 @@ list_issue_statuses({ team: "marutto-ops" })
 ```yaml
 title: "<title>"
 team: marutto-ops
-project: "[FDE] 制作プロセス改善"
-state: Triage
+project: "<解決したプロジェクト>"
+state: Todo
 priority: 3
 description: |
   ## 背景・目的
@@ -106,7 +106,7 @@ description: |
 
 ## Rules
 
-作成時の status は常に Triage とし、デフォルトパラメータは明示指定がない限り変更しない。取りかかった Issue は [Start](#start) のとおり In Progress にし、それ以外の状態の変更はユーザーの指示があるときだけ行う。description には実務に必要な情報のみを記載する。同一テーマの `[親]` Issue がある場合は parentId に設定する。既存 Issue と重複する場合は新規作成しない。
+デフォルト値はユーザーの明示指定がない限り変更しない。取りかかった Issue は [Start](#start) のとおり In Progress にし、それ以外の状態の変更はユーザーの指示があるときだけ行う。description には実務に必要な情報のみを記載する。同一テーマの `[親]` Issue がある場合は parentId に設定する。既存 Issue と重複する場合は新規作成しない。
 
 ## References
 

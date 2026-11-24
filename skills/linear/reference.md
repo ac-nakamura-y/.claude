@@ -7,8 +7,8 @@ Issue 作成時の payload 例、description テンプレート、報告形式�
 ```yaml
 title: "タスクタイトル"
 team: marutto-ops
-project: "[FDE] 制作プロセス改善"
-state: Triage
+project: "<解決したプロジェクト>"
+state: Todo
 priority: 3
 description: |
   ## 背景・目的
@@ -28,11 +28,11 @@ description: |
 | Field | Default | Override |
 | :-- | :-- | :-- |
 | team | marutto-ops | ユーザー明示時のみ |
-| project | [FDE] 制作プロセス改善 | ユーザー明示時のみ |
+| project | [FDE] イニシアチブ配下で自身がメンバーのうち内容に合うもの | ユーザー明示時のみ |
 | assignee | null | ユーザー明示時のみ |
 | dueDate | null | ユーザー明示時のみ |
 | priority | 3 | ユーザー明示時のみ |
-| status | Triage | 作成時は上書き不可。取りかかったら In Progress |
+| status | Todo | ユーザー明示時のみ。取りかかったら In Progress |
 | parentId | なし | 親 Issue が文脈上明らかな場合 |
 | labels | null | ユーザー明示時のみ |
 
@@ -80,4 +80,4 @@ description: |
 
 | Title | Linear | Settings |
 | :-- | :-- | :-- |
-| タスク名 | [MRTTOPS-xxxx](linear-url) | marutto-ops / [FDE] 制作プロセス改善 / Medium / Triage |
+| タスク名 | [MRTTOPS-xxxx](linear-url) | marutto-ops / [阪急交通社] コスト削減 / Medium / Todo |

@@ -82,27 +82,7 @@ gh pr create --repo ac-nakamura-y/.claude --base main --head <branch>
 
 ## Linear Operations
 
-Notion DB の改善項目を Linear Issue 化するときは、Linear MCP を使う。詳細な手順とデフォルト値は `~/.claude/skills/linear/SKILL.md` を参照する。
-
-Issue 作成の流れは、対象レコードの特定、重複確認、作成、結果報告の順である。
-
-```mermaid
-flowchart LR
-  findRecords[レコード特定] --> checkDup[重複確認]
-  checkDup --> saveIssue[Issue作成]
-  saveIssue --> report[結果報告]
-```
-
-作成時のデフォルト値を以下に示す。
-
-| Field | Value |
-| :-- | :-- |
-| team | `marutto-ops` |
-| project | `[FDE] 制作プロセス改善` |
-| status | `Triage` |
-| priority | medium（ `3` ） |
-
-重複が疑われる場合は `list_issues` で検索し、既存 Issue があるときは新規作成せずその URL を返す。旧 Issue を統合する場合は `duplicateOf` で Duplicate 化してから新 Issue を作成する。
+Linear の操作は Linear MCP を使う。Issue の起票と着手は Skill `linear`、Notion DB の改善項目の Issue 化は Skill `fde:notion2linear` に従う。
 
 ## Notion Operations
 
