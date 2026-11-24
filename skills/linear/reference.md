@@ -1,40 +1,6 @@
 # Reference
 
-Issue 作成時の payload 例、description テンプレート、報告形式を示す。
-
-## Payload
-
-```yaml
-title: "タスクタイトル"
-team: marutto-ops
-project: "[FDE] 制作プロセス改善"
-state: Triage
-priority: 3
-description: |
-  ## 背景・目的
-  ...
-
-  ## スコープ
-  ...
-
-  ## 完了条件
-  ...
-```
-
-## Override
-
-デフォルト値と上書き条件を次に示す。
-
-| Field | Default | Override |
-| :-- | :-- | :-- |
-| team | marutto-ops | ユーザー明示時のみ |
-| project | [FDE] 制作プロセス改善 | ユーザー明示時のみ |
-| assignee | null | ユーザー明示時のみ |
-| dueDate | null | ユーザー明示時のみ |
-| priority | 3 | ユーザー明示時のみ |
-| status | Triage | 作成時は上書き不可。取りかかったら In Progress |
-| parentId | なし | 親 Issue が文脈上明らかな場合 |
-| labels | null | ユーザー明示時のみ |
+Issue の description テンプレートと、作成結果の報告形式を示す。
 
 ## Description Templates
 
@@ -78,6 +44,6 @@ description: |
 
 ## Report Format
 
-| Title | Linear | Settings |
-| :-- | :-- | :-- |
-| タスク名 | [MRTTOPS-xxxx](linear-url) | marutto-ops / [FDE] 制作プロセス改善 / Medium / Triage |
+| Title | Linear | Project | Status |
+| :-- | :-- | :-- | :-- |
+| タスク名 | [MRTTOPS-xxxx](linear-url) | [阪急交通社] コスト削減 | Todo |
