@@ -1,6 +1,6 @@
 ---
 name: slide-editing
-description: Rules for editing an existing slide deck (.pptx, including .pptx files on Google Drive, or Google Slides) without touching the original. Edit a copy of the file, and when changing a slide, duplicate it right after itself, edit the duplicate and hide the original. Leave questions for people and values still to fill as yellow sticky notes outside the slide. Use whenever editing, fixing, rewriting or updating slides in an existing deck (「スライドを修正して」「この資料を直して」「◯枚目を変えて」), alongside any other slide skill (brainpad-slides, slide-bp, sabon-teirei-deck, pptx, google-workspace).
+description: Rules for editing an existing slide deck (.pptx, including .pptx files on Google Drive, or Google Slides) without touching the original. Edit a copy of the file, and when changing a slide, duplicate it right after itself, edit the duplicate and hide the original. Leave questions for people and values still to fill as yellow sticky notes on the slide (top right, or the middle for a note about the whole slide). Use whenever editing, fixing, rewriting or updating slides in an existing deck (「スライドを修正して」「この資料を直して」「◯枚目を変えて」), alongside any other slide skill (brainpad-slides, slide-bp, sabon-teirei-deck, pptx, google-workspace).
 ---
 
 # Slide Editing
@@ -50,15 +50,15 @@ flowchart LR
 
 ## Sticky Notes
 
-人に確かめることと、後で埋める値は、チャットや別のメモではなく、該当するスライドの枠の外に黄色の付箋として置く。スライドショーや PDF には映らないため、確認が済むまで資料をそのままチーム内で共有でき、開いた人はどのスライドで誰に何を確かめるかを一目でつかめる。
+人に確かめることと、後で埋める値は、チャットや別のメモではなく、該当するスライドの中に黄色の付箋として置く。開いた人は、どのスライドで誰に何を確かめるかを一目でつかめる。
 
 付箋の決まりを以下に示す。
 
 | 項目 | 決まり |
 | :-- | :-- |
-| 位置 | スライドの上端より上の、ページの外に置く。 `1` 枚に複数あるときは横に並べる |
+| 位置 | スライドの中の右上に置き、 `1` 枚に複数あるときは縦に並べる。スライド全体への追記、差し替え、Appendix への移動など、 `1` 枚まるごとに関わるものは中央に置く |
 | 見た目 | 塗り `FFF2CC` 、黒の細い枠線、黒の `9` pt の文字 |
 | 1 行目 | 人に確かめることは「■要確認（確認先）」、後で埋める値は「■記入待ち」と書く |
 | 2 行目以降 | 確かめることか埋める内容を、いつまでに何を受けて埋めるかとあわせて `1`〜`2` 文で書く |
 
-付箋は、確認が済んで反映したものから消す。先方へ出す前に、塗りが `FFF2CC` の図形が残っていないことを確かめる。
+付箋は、確認が済んで反映したものから消す。付箋はスライドショーや PDF にも映るため、先方へ出す前に、塗りが `FFF2CC` の図形が残っていないことを確かめる。
