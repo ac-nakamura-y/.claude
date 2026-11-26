@@ -1,9 +1,9 @@
-"""その日の FDE の会議ページを Notion の議事録 DB（marutto_議事録）に用意し、ダッシュボードの HTML ファイルを添付する。
+"""その日の FDE の会議ページを Notion の議事録 DB（marutto_議事録）に用意し、ダッシュボードの HTML ファイルを埋め込む。
 月曜は「[FDE] プランニング」、火〜金は「[FDE] デイリー」。ページは、議事録 DB にある同じ名前のテンプレートから作り、日時をその日にする。
 その日のページがすでにあれば作らない。
-ダッシュボード（fde-planning-2026-10-05.html）は fde-dashboard-<asOf>.html という名前の File ブロックにして、
+ダッシュボード（fde-planning-2026-10-05.html）は fde-dashboard-<asOf>.html という名前で送り、ページに表示される埋め込みブロックにして、
 ページの最初の空の行（テンプレートでは、デイリーは「会話事項」、プランニングは「アジェンダ」の下）の前に置く。
-同じ名前の添付がすでにあれば（同じ日のやり直し）、新しいものをその位置に置いてから古いものを消し、差し替える。
+同じ名前の埋め込みがすでにあれば（同じ日のやり直し）、新しいものをその位置に置いてから古いものを消し、差し替える。
 
 Usage: python3 notion_page.py <asOf YYYY-MM-DD>
   認証は Notion の公式 API のトークン（~/.config/notion/token）を使う。トークンのコネクトを議事録 DB に接続しておく。
@@ -55,19 +55,19 @@ else:
                        "カテゴリ": {"select": {"name": "FDE"}},
                        "日時": {"date": {"start": as_of}}}}), True
 
-# ---- 置く位置を決める：同じ名前の添付があればその位置、なければ最初の空の行の位置（テンプレートの中身は作成のあと少し遅れて入る）
+# ---- 置く位置を決める：同じ名前の埋め込みがあればその位置、なければ最初の空の行の位置（テンプレートの中身は作成のあと少し遅れて入る）
 for _ in range(30):
     blocks = api("GET", f"blocks/{page['id']}/children?page_size=100")["results"]
-    old = next((i for i, b in enumerate(blocks) if b["type"] == "file" and b["file"].get("name") == NAME), None)
+    old = next((i for i, b in enumerate(blocks) if b["type"] == "embed" and b["embed"]["url"].split("?")[0].endswith("/" + NAME)), None)
     at = old if old is not None else next((i for i, b in enumerate(blocks) if b["type"] == "paragraph" and not b["paragraph"]["rich_text"]), None)
     if at: break
     time.sleep(2)
-else: sys.exit("ページに、添付先の空の行（とその手前のブロック）がない")
+else: sys.exit("ページに、埋め込み先の空の行（とその手前のブロック）がない")
 
-# ---- ダッシュボードを送り、その位置の手前のブロックの直後に File ブロックとして置く。差し替えなら、置いたあとで古いものを消す
+# ---- ダッシュボードを送り、その位置の手前のブロックの直後に埋め込みブロックとして置く。差し替えなら、置いたあとで古いものを消す
 upload = api("POST", "file_uploads", {"filename": NAME, "content_type": "text/html"})
 api("POST", f"file_uploads/{upload['id']}/send", file=DASHBOARD)
 api("PATCH", f"blocks/{page['id']}/children", {"after": blocks[at - 1]["id"], "children": [
-    {"type": "file", "file": {"type": "file_upload", "file_upload": {"id": upload["id"]}, "name": NAME}}]})
+    {"type": "embed", "embed": {"type": "file_upload", "file_upload": {"id": upload["id"]}}}]})
 if old is not None: api("DELETE", f"blocks/{blocks[old]['id']}")
-print(("作成" if made else "既存") + f" {TITLE} {as_of} " + ("差し替え" if old is not None else "添付") + f" {page['url']}")
+print(("作成" if made else "既存") + f" {TITLE} {as_of} " + ("差し替え" if old is not None else "埋め込み") + f" {page['url']}")
