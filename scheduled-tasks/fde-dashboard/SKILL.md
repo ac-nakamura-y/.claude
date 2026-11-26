@@ -1,6 +1,6 @@
 ---
 name: fde-dashboard
-description: Every weekday at 10:00, asks assignees to check their overdue FDE issues in Linear, then 10 minutes before the day's FDE meeting rebuilds the FDE dashboard, publishes it, and attaches it to the meeting page in Notion
+description: Every weekday at 10:00, asks assignees to check their overdue FDE issues in Linear, then 10 minutes before the day's FDE meeting rebuilds the FDE dashboard, publishes it, and embeds it in the meeting page in Notion
 ---
 
 # FDE Daily Planning
@@ -10,7 +10,7 @@ description: Every weekday at 10:00, asks assignees to check their overdue FDE i
 FDE の会議（月曜は「[FDE] プランニング」、火〜金は「[FDE] デイリー」）に向けて、営業日の 10 時に起動し、1 つの会話で次の 2 つを行う。
 
 - 10 時：Google カレンダーで会議の開始時刻を確かめ、開始の 10 分前にダッシュボードを作り直すよう、この会話の中に予約する。続けて Linear から Issue を取り込み、ダッシュボードで「期限超過」と表示される Issue すべてに、担当者へ確認を促すコメントを送る。
-- 会議の 10 分前：Linear の Initiative「[FDE]」のプロジェクトと Issue、Slack の Do³ の記録を取り込み、ダッシュボード（Artifact https://claude.ai/artifact/XQYFeVcmGrKdYyDXFh4RU5 ）を作り直して公開する。続けて、その日の会議ページを Notion の議事録 DB に用意し、ダッシュボードの HTML ファイルを添付する。会議はそのページを開くだけで始められる。
+- 会議の 10 分前：Linear の Initiative「[FDE]」のプロジェクトと Issue、Slack の Do³ の記録を取り込み、ダッシュボード（Artifact https://claude.ai/artifact/XQYFeVcmGrKdYyDXFh4RU5 ）を作り直して公開する。続けて、その日の会議ページを Notion の議事録 DB に用意し、ダッシュボードの HTML ファイルを埋め込む。会議はそのページを開くだけで始められる。
 
 道具とデータは `~/.claude/scheduled-tasks/fde-dashboard/` にあり、 `src.html` がダッシュボードのデータの正本である。
 
@@ -18,7 +18,7 @@ FDE の会議（月曜は「[FDE] プランニング」、火〜金は「[FDE] �
 
 | 対象 | 決まり |
 | :-- | :-- |
-| 外部サービス | Google カレンダーと Slack は読むだけで、変更・投稿はしない。Linear は、期限超過の Issue にコメントを送ることだけを行う。Notion は、その日の FDE の会議ページを作り、ダッシュボードを添付することだけを行う |
+| 外部サービス | Google カレンダーと Slack は読むだけで、変更・投稿はしない。Linear は、期限超過の Issue にコメントを送ることだけを行う。Notion は、その日の FDE の会議ページを作り、ダッシュボードを埋め込むことだけを行う |
 | 道具 | 道具のコード（ `*.js` ・ `*.py` ）は直さず、読む必要もない。何を読み何を出すかは、この手順書に書いてある |
 | エラー | どこかでエラーが出たら、その時点で止め、エラーの文面をそのまま報告する。やり直しや回り道はしない |
 | 触らないもの | 差し込みタスク・今週のプロジェクト・目標は、この実行では触らない |
@@ -239,17 +239,17 @@ cmp ~/.claude/scheduled-tasks/fde-dashboard/fde-planning-2026-10-05.html ~/batb/
 
 ## Notion
 
-その日の会議ページを用意し、ダッシュボードを添付する。
+その日の会議ページを用意し、ダッシュボードを埋め込む。
 
 ```bash
 python3 ~/.claude/scheduled-tasks/fde-dashboard/notion_page.py <ASOF>
 ```
 
-スクリプトは Notion の公式 API で次を行い、最後に「作成」か「既存」、「添付」か「差し替え」、ページの URL を 1 行で出す。
+スクリプトは Notion の公式 API で次を行い、最後に「作成」か「既存」、「埋め込み」か「差し替え」、ページの URL を 1 行で出す。
 
 - その日のページがなければ、議事録 DB にある同じ名前のテンプレートから作り、日時をその日にする。その日のページがすでにあれば作らない。
-- Rebuild で作った `fde-planning-2026-10-05.html` を、 `fde-dashboard-<ASOF>.html` という名前の File ブロックとして、ページの最初の空の行の前に置く。テンプレートでは、その行はデイリーなら「会話事項」、プランニングなら「アジェンダ」の下にある。
-- 同じ名前の添付がすでにあれば、新しいものを同じ位置に置いてから古いものを消し、差し替える。
+- Rebuild で作った `fde-planning-2026-10-05.html` を、 `fde-dashboard-<ASOF>.html` という名前で送り、ページの中に表示される埋め込みブロックとして、ページの最初の空の行の前に置く。テンプレートでは、その行はデイリーなら「会話事項」、プランニングなら「アジェンダ」の下にある。
+- 同じ名前の埋め込みがすでにあれば、新しいものを同じ位置に置いてから古いものを消し、差し替える。
 
 ## Report
 
@@ -266,7 +266,7 @@ python3 ~/.claude/scheduled-tasks/fde-dashboard/notion_page.py <ASOF>
 | 項目 | 出どころ |
 | :-- | :-- |
 | 取り込んだ日と週、公開した版 | `ASOF` 、 `rebuild.js` の `week` の値、Publish の結果の版 |
-| Notion のページ | `notion_page.py` の最後の行（作成か既存か、添付か差し替えかと URL） |
+| Notion のページ | `notion_page.py` の最後の行（作成か既存か、埋め込みか差し替えかと URL） |
 | 変更の記録 | `refresh.js` の前半 |
 | Do³ | 今日の記号（7 人分）と、迷い・判断の原文があった人（Slack の取得の返事） |
 | Issue | `collect.py` の Issue の件数と、 `extras.js due` の期限の Issue の件数 |
@@ -274,4 +274,4 @@ python3 ~/.claude/scheduled-tasks/fde-dashboard/notion_page.py <ASOF>
 
 ## Rerun
 
-更新の報告のあとにユーザーからやり直しを頼まれたら、同じ会話で Fetch から Notion までと更新の報告をもう一度行う。 `ASOF` と `OUT` は Calendar の値をそのまま使う。 `collect.py` は同じ呼び出しのうち後のものを使うので、取り直した結果が使われる。Notion では、添付が新しいものに差し替わる。
+更新の報告のあとにユーザーからやり直しを頼まれたら、同じ会話で Fetch から Notion までと更新の報告をもう一度行う。 `ASOF` と `OUT` は Calendar の値をそのまま使う。 `collect.py` は同じ呼び出しのうち後のものを使うので、取り直した結果が使われる。Notion では、埋め込みが新しいものに差し替わる。
