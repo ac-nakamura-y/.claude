@@ -11,6 +11,13 @@ description: Rules for editing an existing slide deck (.pptx, including .pptx fi
 
 スライドを編集する際は必ずファイルをコピーし、そのコピーを編集する。原本には、利用者の明示的な許可があるまで一切手を入れない。編集を終えたら、コピーの場所（パスまたは URL）を利用者に伝える。
 
+コピーの置き場所と名前は、作る資料で決める。どちらの場合も、名前に `[WIP]` などの作業中を示す付記は付けない。
+
+| 作る資料 | 置き場所 | 名前 |
+| :-- | :-- | :-- |
+| 前回の資料をもとにした次の回の資料（例：資生堂の定例資料） | 資料を格納するフォルダ（例： `07_資生堂(エリクシール)さま/01_会議資料/02_定例資料/` ） | 格納先の命名に合わせた正式な名前（例： `資生堂ジャパン株式会社様_定例会議資料_YYMMDD.pptx` ） |
+| 既存の資料の編集版 | 作業フォルダ（例：中村作業フォルダ） | 原本の名前 |
+
 形式ごとのコピー方法を以下に示す。
 
 | 形式 | コピーの方法 |
@@ -23,7 +30,7 @@ description: Rules for editing an existing slide deck (.pptx, including .pptx fi
 
 Google ドライブ上の .pptx は、Google Drive for desktop の同期フォルダで読み書きする。Drive MCP の `download_file_content` は `10` MB を超えるファイルを取得できず、Slides MCP は .pptx を編集できず、ブラウザからのダウンロードは組織のポリシーで止まるためである。
 
-1. Drive MCP の `copy_file` で、原本を作業フォルダ（例：中村作業フォルダ）へコピーする。
+1. Drive MCP の `copy_file` で、原本を File Copy 節で決めた置き場所へ、決めた名前でコピーする（ `parentId` と `title` を指定する）。
 2. 同期フォルダでコピーを探す。共有ドライブや共有アイテムは `~/Library/CloudStorage/GoogleDrive-<アカウント>/.shortcut-targets-by-id/<ID>/` の下にある。日本語のファイル名は NFD で保存されるため、 `find -name` は英数字の部分で探す。
 3. 手元の作業ディレクトリへ `cp` して編集する。コピーの直後は中身の取得が終わっておらず `0` バイトのことがあるので、サイズを確かめてから使う。
 4. 編集した .pptx を同じパスへ `cp` で上書きする。ファイル ID は変わらず、新しい版としてアップロードされる。 `get_file_metadata` でサイズと更新日時が変わったことを確かめる。
