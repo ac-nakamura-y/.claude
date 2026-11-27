@@ -139,12 +139,13 @@ description は依頼の引用から始め、リンクを引用の中に埋め�
 
 ## Session
 
-セッションは、修正の後の再レビューの依頼も含めて、依頼ごとに `1` つ始める。指示のファイルと始める場所を次のとおり決める。
+セッションは、修正の後の再レビューの依頼も含めて、依頼ごとに `1` つ始める。指示のファイル、始める場所、セッションの名前を次のとおり決める。
 
 | item | 決め方 |
 | :-- | :-- |
 | 指示のファイル | Slack の依頼は `~/.claude/auto-review/briefs/slack-<Message_ts>.md`、Linear の依頼は `~/.claude/auto-review/briefs/linear-<コメントの id>.md` |
 | 始める場所 | 依頼の最初の PR の手元のフォルダ |
+| セッションの名前 | 依頼の PR を `<リポジトリ名>#<PR の番号>` の形で `・` でつなぎ、` のレビュー` を続ける。`ac-llm-platform#368 のレビュー` や `ac-llm-platform#368・ac-llm-platform#370 のレビュー` になる |
 
 指示のファイルには次をこのまま書き、`<>` を埋める。`### <owner/repo>#<PR の番号>` の節は、依頼の PR の数だけ書く。最初の段落の「定期タスク Auto Review が始めた」が、このタスクのセッションを見分ける目印である。
 
@@ -195,7 +196,7 @@ PR ごとにレビューして判定を決め、Approve でない PR を書き�
 6. Approve の PR があれば、報告に続けて Rules のとおり送信するかを尋ね、`送信する` なら書き込む。手順 `3` で書き込まないと決めた PR と外した指摘、利用者が自分で送る返信の文面は、尋ねる前の報告に含める
 ```
 
-Skill `session-kickoff` に従い、背景セッションを始めて固定する。追加の引数は `--model claude-sonnet-5-5 --effort xhigh` とし、Sonnet 5.5 を effort `xhigh` で動かす。
+Skill `session-kickoff` に従い、上のセッションの名前を付けて背景セッションを始め、固定する。追加の引数は `--model claude-sonnet-5-5 --effort xhigh` とし、Sonnet 5.5 を effort `xhigh` で動かす。
 
 始められたら、依頼が Slack のメッセージであれば、`slack_add_reaction` でそのメッセージに `eyes` を付け、レビューに取りかかったことを依頼者に示す。`channel_id` は依頼の permalink の `archives/` の後の値、`message_ts` は依頼の `Message_ts` である。付けられなかったときは、エラーを報告に書く。Linear の依頼にはリアクションを付けない。
 
