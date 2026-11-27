@@ -44,7 +44,7 @@
 | `markdown` | このリポジトリ | Markdown とそれに準じた記法 |
 | `pr-stats` | このリポジトリ | Pull Request の週次集計 |
 | `product-management` | このリポジトリ | 価値提供の指標と、作らずに済ませる判断 |
-| `session-kickoff` | このリポジトリ | 作業ごとに背景セッションを始め、返事を待つ間も止まらないよう固定する |
+| `session-kickoff` | このリポジトリ | 作業を Remote Control 付きの背景セッションで始め、返事を待つ間も止まらないよう固定する |
 
 ## Plugins
 
