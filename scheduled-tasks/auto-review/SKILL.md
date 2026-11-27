@@ -195,7 +195,7 @@ PR ごとにレビューして判定を決め、Approve でない PR を書き�
 6. Approve の PR があれば、報告に続けて Rules のとおり送信するかを尋ね、`送信する` なら書き込む。手順 `3` で書き込まないと決めた PR と外した指摘、利用者が自分で送る返信の文面は、尋ねる前の報告に含める
 ```
 
-Skill `session-kickoff` に従い、背景セッションを始めて固定する。モデルは Sonnet 5.5（ `claude-sonnet-5-5` ）、effort は `xhigh` にするため、追加の引数は `--model claude-sonnet-5-5 --effort xhigh` とする。
+Skill `session-kickoff` に従い、背景セッションを始めて固定する。追加の引数は `--model claude-sonnet-5-5 --effort xhigh` とし、Sonnet 5.5 を effort `xhigh` で動かす。
 
 始められたら、依頼が Slack のメッセージであれば、`slack_add_reaction` でそのメッセージに `eyes` を付け、レビューに取りかかったことを依頼者に示す。`channel_id` は依頼の permalink の `archives/` の後の値、`message_ts` は依頼の `Message_ts` である。付けられなかったときは、エラーを報告に書く。Linear の依頼にはリアクションを付けない。
 
