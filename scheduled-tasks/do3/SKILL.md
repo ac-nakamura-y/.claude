@@ -1,13 +1,13 @@
 ---
 name: do3
-description: Triages the previous business day's requests into Linear issues, then writes the replies to the Do³ daily session one question at a time and sends them to Slack through Ego Lite. For today's tasks, fits them into free calendar time, adds the work time to the calendar, and starts a Claude Code background session for each non-review task. Asks the user about the triage, today's tasks, and the judgment scene.
+description: On days the tech calendar shows the user's weekday monitoring duty, adds the morning and afternoon monitoring slots to the calendar and starts a monitoring session at 10:00 and 17:00. Triages the previous business day's requests into Linear issues, then writes the replies to the Do³ daily session one question at a time and sends them to Slack through Ego Lite. For today's tasks, fits them into free calendar time, adds the work time to the calendar, and starts a Claude Code background session for each non-review task. Asks the user about the triage, today's tasks, and the judgment scene.
 ---
 
 # Do³
 
 平日の朝、Do³ の日次セッション（ `do_daily_v2` ）で本人が送る返信を用意して送る。Do³ は営業日の朝、#01_1on1_prd_mktops などのチャンネルにメンバーごとのスレッドを立て、昨日終わらせたこと、今日の予定、判断に迷った場面、その判断基準を 1 問ずつ聞き、最後にまとめを示す。予実を共有し、どんな場面でどんな基準で判断しているかを積み重ねて見えるようにするのが Do³ の目的である。
 
-このタスクは、まず前営業日に届いた依頼をトリアージし、本人が選んだものを Linear の Issue にする。続けて各問いへの返信を本人の言葉で書き、[Posting](#posting) のとおり下書きを置いて Ego Lite から送る。本人の確認を待つのは、トリアージ、今日の予定、判断に迷った場面の 3 つだけで、ほかの返信は文面ができたらそのまま送る。今日の予定は候補のうち空き時間に収まる分だけを選び、送ったら作業時間をカレンダーに入れ、挙げた作業ごとに Claude Code の背景セッションを始める。報告はすべて日本語で書く。
+このタスクは、まず tech のカレンダーで本人の監視の当番日かを確かめ、当番日なら監視の予定を入れて、10 時と 17 時に監視のセッションを始める。続けて前営業日に届いた依頼をトリアージし、本人が選んだものを Linear の Issue にする。その後、各問いへの返信を本人の言葉で書き、[Posting](#posting) のとおり下書きを置いて Ego Lite から送る。本人の確認を待つのは、トリアージ、今日の予定、判断に迷った場面の 3 つだけで、ほかの返信は文面ができたらそのまま送る。今日の予定は候補のうち空き時間に収まる分だけを選び、送ったら作業時間をカレンダーに入れ、挙げた作業ごとに Claude Code の背景セッションを始める。報告はすべて日本語で書く。
 
 ## Steps
 
@@ -15,24 +15,95 @@ description: Triages the previous business day's requests into Linear issues, th
 
 | # | 手順 | 節 | 本人の確認 |
 | --: | :-- | :-- | :-- |
-| 1 | スレッドを特定して読む | [Thread](#thread) | なし |
-| 2 | トリアージ：前営業日の依頼から Issue の案を示し、選ばれた案を Issue にする | [Requests](#requests) | 案を選んでもらう |
-| 3 | 昨日実施した業務を書いて送る | [Yesterday](#yesterday)・[Posting](#posting) | なし |
-| 4 | 本日実施する業務：候補、文面、作業時間の表、セッションの表を示し、承認を得たら、送る、カレンダーに入れる、セッションを始めるの順に行う | [Today](#today)・[Calendar](#calendar)・[Kickoff](#kickoff)・[Posting](#posting) | 承認を得る |
-| 5 | 判断に迷った場面の候補を 5 つ示し、選ばれたものを送る | [Judgment](#judgment)・[Posting](#posting) | 選んでもらう |
-| 6 | 判断基準を書いて送る | [Judgment](#judgment)・[Posting](#posting) | なし |
-| 7 | まとめの確認に返信する | [Summary](#summary)・[Posting](#posting) | なし |
-| 8 | 送った返信と止まって本人に任せた返信、作った Issue、[Events](#events) の表、[Kickoff Report](#kickoff-report) の表、失敗したこととそのエラーをまとめて報告する | | なし |
+| 1 | 監視：当番日なら監視の予定を入れ、監視のセッションを予約する | [Monitoring](#monitoring) | なし |
+| 2 | スレッドを特定して読む | [Thread](#thread) | なし |
+| 3 | トリアージ：前営業日の依頼から Issue の案を示し、選ばれた案を Issue にする | [Requests](#requests) | 案を選んでもらう |
+| 4 | 昨日実施した業務を書いて送る | [Yesterday](#yesterday)・[Posting](#posting) | なし |
+| 5 | 本日実施する業務：候補、文面、作業時間の表、セッションの表を示し、承認を得たら、送る、カレンダーに入れる、セッションを始めるの順に行う | [Today](#today)・[Calendar](#calendar)・[Kickoff](#kickoff)・[Posting](#posting) | 承認を得る |
+| 6 | 判断に迷った場面の候補を 5 つ示し、選ばれたものを送る | [Judgment](#judgment)・[Posting](#posting) | 選んでもらう |
+| 7 | 判断基準を書いて送る | [Judgment](#judgment)・[Posting](#posting) | なし |
+| 8 | まとめの確認に返信する | [Summary](#summary)・[Posting](#posting) | なし |
+| 9 | [Monitoring Report](#monitoring-report) の表、送った返信と止まって本人に任せた返信、作った Issue、[Events](#events) の表、[Kickoff Report](#kickoff-report) の表、失敗したこととそのエラーをまとめて報告する | | なし |
 
-手順は 1 つずつ行う。前の手順を終えるまで（返信を送る手順では、届いたことを確かめるまで）、次の手順の材料集め、サブエージェントの起動、文面づくりを始めない。1 通のメッセージに 2 つの手順の文面や確認を入れない。本人の確認がある手順では、示したところで手番を終え、本人の返事を待つ。
+手順は 1 つずつ行う。前の手順を終えるまで（返信を送る手順では、届いたことを確かめるまで）、次の手順の材料集め、サブエージェントの起動、文面づくりを始めない。1 通のメッセージに 2 つの手順の文面や確認を入れない。本人の確認がある手順では、示したところで手番を終え、本人の返事を待つ。手順 1 で予約した監視の開始時刻が届いたときだけは、どの手順の途中でも [Monitoring Session](#monitoring-session) のとおりセッションを始める。
 
-スレッドで本人がすでに答えた問いは、その送信を済んだものとする。今日の予定を本人がすでに送っていても、手順 4 のカレンダーとセッションは行う。どちらも、すでにある予定とセッションを作り直さない。
+スレッドで本人がすでに答えた問いは、その送信を済んだものとする。今日の予定を本人がすでに送っていても、手順 5 のカレンダーとセッションは行う。どちらも、すでにある予定とセッションを作り直さない。
 
 送ったあとは毎回スレッドを読む。Do³ が深掘りの問いを挟んでいれば、次の手順に進む前に答えて送る。たとえば「どんな形のアウトプットになっていて誰が見れば確認できる状態までできましたか？」には、一覧にせず「いずれもスライドもしくは artifact で、チームメンバーが見て確認できる状態まで進めました。」のように 1〜2 文で答える。
 
+## Monitoring
+
+tech のカレンダーで今日が本人の監視の当番日かを確かめ、当番日なら監視の予定を本人のカレンダーに入れ、予定の開始時刻に監視のセッションを始めるよう、この会話の中に予約する。監視の予定は次の 2 つである。
+
+| 予定 | 時間 |
+| :-- | :-- |
+| [監視] 午前監視 | 10:00〜11:00 |
+| [監視] 午後監視 | 17:00〜17:30 |
+
+### Duty
+
+Google Calendar の `list_events` を次の引数で呼ぶ。tech のカレンダーは本人の主カレンダーとは別なので、 `calendarId` を渡す。
+
+```json
+{"calendarId": "c_oaoql0aoncppe1elsqjgma8r20@group.calendar.google.com", "startTime": "<今日>T00:00:00", "endTime": "<今日>T23:59:59", "fullText": "平日監視"}
+```
+
+`start.date` を持つ終日予定のうち、summary がちょうど `平日監視：中村` で、 `status` が `cancelled` でないものがあれば当番日とする。なければ、この手順を終えて手順 2 に進む。
+
+### Monitoring Events
+
+今日の主カレンダーを `list_events` で読み、上の表の予定ごとに、summary が同じ予定が今日すでにあるかを確かめる。なければ `create_event` で作る。招待する人は付けず、 `calendarId` と `timeZone` は渡さない。
+
+| field | value |
+| :-- | :-- |
+| summary | 表の予定 |
+| startTime・endTime | 表の時間（UTC オフセットを付けない ISO 8601） |
+| colorId | `10` （バジル。緑） |
+
+### Booking
+
+表の予定ごとに、今の時刻（JST）と比べて次のとおり扱う。
+
+| 状況 | 行うこと |
+| :-- | :-- |
+| 予定の開始より前 | ToolSearch を `{"query": "select:CronCreate", "max_results": 1}` で呼んで読み込み、CronCreate を下の引数で呼ぶ |
+| 予定の開始を過ぎ、終わりより前 | 予約せず、すぐに [Monitoring Session](#monitoring-session) のとおりセッションを始める |
+| 予定の終わりを過ぎている | 予約もセッションもしない |
+
+```json
+{"cron": "0 <開始の時> <今日の日> <今日の月> *", "recurring": false, "prompt": "<予定> の開始時刻になった。手順書 do3 の Monitoring Session のとおり監視のセッションを始め、ほかの手順は進めない。"}
+```
+
+予約はこの会話の中だけにあり、会話が本人の返事を待っている間や手順 9 を終えたあとも、開始時刻が来ると届く。届いたら [Monitoring Session](#monitoring-session) のとおりセッションを始め、その結果だけを報告する。本人の確認を待っている途中であれば、続けて待っている確認を示し直して手番を終える。
+
+### Monitoring Session
+
+セッションは Skill `session-kickoff` の Start に従って始める。
+
+| 項目 | 値 |
+| :-- | :-- |
+| 名前 | `<予定> <今日の日付（YYYY-MM-DD）>` 。例： `[監視] 午前監視 2026-11-27` |
+| フォルダ | このコンピューター（[Start](#start) と同じ置き場に scratch のフォルダを作り、 `-w` を付けない） |
+| 指示のファイル | この実行の scratchpad に `監視を開始してください！` の 1 行だけを書く |
+| 追加の引数 | [Start](#start) と同じ |
+| 固定 | しない |
+
+`claude agents --json --all` に同じ名前の `background` のセッションがあれば、始めない。CLI にログインしていなければ、始めずに「CLI へのログインが必要（ `claude auth login` ）」と報告する。
+
+### Monitoring Report
+
+手順 1 を終えたら、次の表を示す。予約した行の「結果」には CronCreate が返した実行の時刻を、始めた行には `<id>` を、何もしなかった行にはその理由（当番日ではない、予定の終わりを過ぎている、同じ名前のセッションがある、始められなかった）を書く。
+
+```markdown
+| 予定 | カレンダー | セッション | 結果 |
+| :-- | :-- | :-- | :-- |
+| [監視] 午前監視 | 作った | 予約した | 10:00 |
+| [監視] 午後監視 | すでにある | 予約した | 17:00 |
+```
+
 ## Thread
 
-スレッドの読み書きには、チャンネルの ID と親メッセージの ts が要る。 `slack_search_public_and_private` を `do_daily_v2` と `on:<今日の日付（JST）>` 、 `include_bots: true` 、 `response_format: detailed` で検索する。Do³ はメンバーごとに `<@本人の ID> <@Do3> do_daily_v2` の形で親メッセージを立てるため、本人へのメンションを含むものを選び、その `Channel` の ID と `Message_ts` を使う。 `concise` 形式の結果には ts が出ない。スレッドがなければ、「今日の Do³ のスレッドはない」とだけ報告して終える。
+スレッドの読み書きには、チャンネルの ID と親メッセージの ts が要る。 `slack_search_public_and_private` を `do_daily_v2` と `on:<今日の日付（JST）>` 、 `include_bots: true` 、 `response_format: detailed` で検索する。Do³ はメンバーごとに `<@本人の ID> <@Do3> do_daily_v2` の形で親メッセージを立てるため、本人へのメンションを含むものを選び、その `Channel` の ID と `Message_ts` を使う。 `concise` 形式の結果には ts が出ない。スレッドがなければ、[Monitoring Report](#monitoring-report) の表と「今日の Do³ のスレッドはない」とだけ報告して手順を終える。監視の予約は残り、開始時刻が来ると届く。
 
 本人の Slack ID は、Slack ツールが示すログイン中のユーザー ID で分かる。Slack の表示名は「（11日 午後休）」のような添え書きで日によって変わるため、本人の投稿は名前ではなく `from:<@本人の ID>` で探す。
 
@@ -173,9 +244,9 @@ description は出典の引用から始め、Issue から依頼の原文へ辿�
 
 ## Today
 
-今日の予定の候補は、担当の Issue と、手順 2 で作った Issue から作る。
+今日の予定の候補は、担当の Issue と、手順 3 で作った Issue から作る。
 
-Linear の `list_issues` を `assignee: me` で、 `state` を `started` と `unstarted` にして取り、1 件ずつ `get_issue` で読んで [Done](#done) で完了とみなすものを除く。手順 2 で作った Issue は Triage にあり、この結果に出ないため候補に足す。そろった候補を期日、優先度、マイルストーン、その日の会議に向けた準備かどうかで並べ、会議そのものは入れない。候補は [Slots](#slots) のとおり優先度順に今日の空き時間へ置き、置けたものだけを今日の予定にする。
+Linear の `list_issues` を `assignee: me` で、 `state` を `started` と `unstarted` にして取り、1 件ずつ `get_issue` で読んで [Done](#done) で完了とみなすものを除く。手順 3 で作った Issue は Triage にあり、この結果に出ないため候補に足す。そろった候補を期日、優先度、マイルストーン、その日の会議に向けた準備かどうかで並べ、会議そのものは入れない。候補は [Slots](#slots) のとおり優先度順に今日の空き時間へ置き、置けたものだけを今日の予定にする。
 
 次をまとめて 1 つのメッセージで示し、承認を得る。本人はこの場で、項目の出し入れ、作業時間、分類を直せる。直されたら、表を示し直して承認を得る。
 
@@ -199,7 +270,7 @@ Linear の `list_issues` を `assignee: me` で、 `state` を `started` と `un
 
 ## Calendar
 
-今日の予定の項目ごとに作業時間と分類を決め、送ったらその時間を本人の Google Calendar に入れる。カレンダーに書き込むのは、作業時間の予定の作成と、ランチの移動だけである。
+今日の予定の項目ごとに作業時間と分類を決め、送ったらその時間を本人の Google Calendar に入れる。この節でカレンダーに書き込むのは、作業時間の予定の作成と、ランチの移動だけである。
 
 ### Slots
 
@@ -323,9 +394,9 @@ Linear の `list_issues` を `assignee: me` で、 `state` を `started` と `un
 
 場面は、本人がチームでの役割（FDE チームのリーダーなど）として、チームや会社のミッションに向けて下した判断から選ぶ。文言の直し方のような個別作業の迷いは、抽象度が低いため採らない。材料は前営業日の Claude のセッションでの本人の発言である。セッションが多いときはサブエージェントに読ませ、セッションごとに本人の判断を、発言の短い引用、決めたこと、その理由の 3 点で抜き出させる。
 
-手順 5 では、候補を 5 つ、そのまま送れる文面で示し、本人に 1 つ選んでもらう。1 つに決め打ちしない。文面は、1 文目で迷った論点を抽象的に述べ、2 文目で具体的な場面を 1〜2 件挙げ、3 文目でミッションと懸念のどこで板挟みになったかを書く。本人が選んだ候補を、返信で直された点を反映して送る。
+手順 6 では、候補を 5 つ、そのまま送れる文面で示し、本人に 1 つ選んでもらう。1 つに決め打ちしない。文面は、1 文目で迷った論点を抽象的に述べ、2 文目で具体的な場面を 1〜2 件挙げ、3 文目でミッションと懸念のどこで板挟みになったかを書く。本人が選んだ候補を、返信で直された点を反映して送る。
 
-手順 6 の基準は、送った場面に合わせて書く。1 文目で基準を「」でくくって示し、続けてそれぞれの場面への当てはめを書き、最後に一般化した使い分けと、それをチームでどう使うかを書く。
+手順 7 の基準は、送った場面に合わせて書く。1 文目で基準を「」でくくって示し、続けてそれぞれの場面への当てはめを書き、最後に一般化した使い分けと、それをチームでどう使うかを書く。
 
 これまでに送られた場面と基準を次に示す。抽象度はこの 2 件にそろえる。
 
