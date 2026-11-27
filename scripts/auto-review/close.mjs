@@ -4,15 +4,16 @@
 //   close.mjs --hook : Stop フックから標準入力で呼ばれる。Done にしたターンの終わりに、閉じる子を切り離して始めてすぐ戻る。
 //                      子は、利用者がセッションから離れて claude rm が通るまで、数秒おきにやり直す。
 //   close.mjs        : 定期タスク Auto Review が毎回の実行で呼ぶ。入力待ちのレビューのセッションのうち、Done にしたものをまとめて閉じる。
-//                      閉じたものと閉じられなかったものを、id、名前、結果のタブ区切りで 1 行ずつ出す。
+//                      閉じたものと閉じられなかったものを、id と結果のタブ区切りで 1 行ずつ出す。
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-// Auto Review の SKILL.md が決めるセッションの名前の末尾。どちらかを変えるときは両方をそろえる。
-const NAME_SUFFIX = " のレビュー";
+// Auto Review の SKILL.md が指示に書く、このタスクのセッションの目印。どちらかを変えるときは両方をそろえる。
+const MARK = "定期タスク Auto Review が始めた";
+const isReview = (state) => state.intent?.includes(MARK) ?? false;
 const DONE = "Done";
 // 利用者がセッションを開いている間、claude rm が断るときの文言。これで断られたときだけやり直す。
 const IN_USE = "A live Claude Code session";
@@ -49,10 +50,10 @@ function done(transcriptPath) {
 }
 
 // claude rm で閉じ、断られたときはその理由を返す。
-function remove(id, name) {
+function remove(id) {
   const rm = spawnSync("claude", ["rm", id], { encoding: "utf8" });
   if (rm.status === 0) {
-    log(`${id} ${name}: 閉じた ${rm.stdout.trim().replace(/\s+/g, " ")}`);
+    log(`${id}: 閉じた ${rm.stdout.trim().replace(/\s+/g, " ")}`);
     return null;
   }
   return `claude rm が失敗した（終了 ${rm.status ?? rm.signal}）: ${rm.error?.message ?? `${rm.stderr}${rm.stdout}`}`;
@@ -66,7 +67,7 @@ function hook() {
   const id = input.session_id.slice(0, 8);
   if (!fs.existsSync(stateFile(id))) return;
   const state = readJson(stateFile(id));
-  if (state.sessionId !== input.session_id || !state.name?.endsWith(NAME_SUFFIX)) return;
+  if (state.sessionId !== input.session_id || !isReview(state)) return;
   if (!done(input.transcript_path)) return;
   spawn(process.execPath, [fileURLToPath(import.meta.url), "--wait", id], { detached: true, stdio: "ignore" }).unref();
 }
@@ -74,20 +75,19 @@ function hook() {
 // 子の処理：入力待ちになり、利用者がセッションから離れて claude rm が通るまでやり直す。
 // 開いていること以外の理由で断られたら、やり直さずに記録へ残す。定期タスクの実行や別の子が先に閉じていれば、何もせず終わる。
 async function wait(id) {
-  const { name } = readJson(stateFile(id));
   const deadline = Date.now() + WAIT_MINUTES * 60_000;
   let reason = "入力待ちにならない";
   while (Date.now() < deadline) {
     if (!fs.existsSync(stateFile(id))) return;
     if (readJson(stateFile(id)).tempo === "idle") {
-      reason = remove(id, name);
+      reason = remove(id);
       if (reason === null) return;
       if (!reason.includes(IN_USE)) break;
     }
     await sleep(RETRY_SECONDS * 1000);
   }
   if (!fs.existsSync(stateFile(id))) return;
-  log(`${id} ${name}: 閉じられなかった ${reason}`);
+  log(`${id}: 閉じられなかった ${reason}`);
   process.exit(1);
 }
 
@@ -96,15 +96,16 @@ async function wait(id) {
 function sweep() {
   for (const id of fs.readdirSync(JOBS)) {
     if (!fs.existsSync(stateFile(id))) continue;
-    const { name, tempo, linkScanPath } = readJson(stateFile(id));
-    if (!name?.endsWith(NAME_SUFFIX) || tempo !== "idle" || !linkScanPath || !fs.existsSync(linkScanPath)) continue;
+    const state = readJson(stateFile(id));
+    const { tempo, linkScanPath } = state;
+    if (!isReview(state) || tempo !== "idle" || !linkScanPath || !fs.existsSync(linkScanPath)) continue;
     if (!done(linkScanPath)) continue;
-    const reason = remove(id, name);
+    const reason = remove(id);
     if (reason === null) {
-      console.log(`${id}\t${name}\t閉じた`);
+      console.log(`${id}\t閉じた`);
     } else {
-      log(`${id} ${name}: 閉じられなかった ${reason}`);
-      console.log(`${id}\t${name}\t閉じられなかった（ ${LOG} を参照）`);
+      log(`${id}: 閉じられなかった ${reason}`);
+      console.log(`${id}\t閉じられなかった（ ${LOG} を参照）`);
     }
   }
 }
