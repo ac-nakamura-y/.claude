@@ -58,7 +58,7 @@ Google Calendar の `list_events` を次の引数で呼ぶ。tech のカレン�
 | :-- | :-- |
 | summary | 表の予定 |
 | startTime・endTime | 表の時間（UTC オフセットを付けない ISO 8601） |
-| colorId | `2` （[Colors](#colors) のその他） |
+| colorId | `10` （バジル。緑） |
 
 作った予定は、[Slots](#slots) で埋まっている時間に数える。
 
