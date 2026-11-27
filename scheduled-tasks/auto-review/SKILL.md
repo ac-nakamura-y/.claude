@@ -145,7 +145,7 @@ description は依頼の引用から始め、リンクを引用の中に埋め�
 | :-- | :-- |
 | 指示のファイル | Slack の依頼は `~/.claude/auto-review/briefs/slack-<Message_ts>.md`、Linear の依頼は `~/.claude/auto-review/briefs/linear-<コメントの id>.md` |
 | 始める場所 | 依頼の最初の PR の手元のフォルダ |
-| セッションの名前 | 依頼の PR を `<リポジトリ名>#<PR の番号>` の形で `・` でつなぎ、` のレビュー` を続ける。`ac-llm-platform#368 のレビュー` や `ac-llm-platform#368・ac-llm-platform#370 のレビュー` になる |
+| セッションの名前 | `<リポジトリ名>#<PR の番号> のレビュー`。依頼の PR が複数あれば `<リポジトリ名>#<PR の番号>` を `・` でつなぎ、`ac-llm-platform#368・ac-llm-platform#370 のレビュー` のようにする |
 
 指示のファイルには次をこのまま書き、`<>` を埋める。`### <owner/repo>#<PR の番号>` の節は、依頼の PR の数だけ書く。最初の段落の「定期タスク Auto Review が始めた」が、このタスクのセッションを見分ける目印である。
 
