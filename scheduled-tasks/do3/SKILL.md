@@ -33,12 +33,12 @@ description: On days the tech calendar shows the user's weekday monitoring duty,
 
 ## Monitoring
 
-tech のカレンダーで今日が本人の監視の当番日かを確かめ、当番日なら監視の時間を本人のカレンダーに入れ、監視のセッションを始める時刻をこの会話の中に予約する。監視の時間は次の 2 つである。
+tech のカレンダーで今日が本人の監視の当番日かを確かめ、当番日なら監視の予定を本人のカレンダーに入れ、予定の開始時刻に監視のセッションを始めるよう、この会話の中に予約する。監視の予定は次の 2 つである。
 
-| 予定 | 時間 | セッションの開始 |
-| :-- | :-- | :-- |
-| [監視] 午前監視 | 10:00〜11:00 | 10:00 |
-| [監視] 午後監視 | 17:00〜17:30 | 17:00 |
+| 予定 | 時間 |
+| :-- | :-- |
+| [監視] 午前監視 | 10:00〜11:00 |
+| [監視] 午後監視 | 17:00〜17:30 |
 
 ### Duty
 
@@ -52,7 +52,7 @@ Google Calendar の `list_events` を次の引数で呼ぶ。tech のカレン�
 
 ### Monitoring Events
 
-当番日なら、今日の主カレンダーを `list_events` で読み、上の表の予定ごとに、summary が同じ予定が今日すでにあるかを確かめる。なければ `create_event` で作る。招待する人は付けず、 `calendarId` と `timeZone` は渡さない。
+今日の主カレンダーを `list_events` で読み、上の表の予定ごとに、summary が同じ予定が今日すでにあるかを確かめる。なければ `create_event` で作る。招待する人は付けず、 `calendarId` と `timeZone` は渡さない。
 
 | field | value |
 | :-- | :-- |
@@ -60,16 +60,14 @@ Google Calendar の `list_events` を次の引数で呼ぶ。tech のカレン�
 | startTime・endTime | 表の時間（UTC オフセットを付けない ISO 8601） |
 | colorId | `10` （バジル。緑） |
 
-作った予定は、[Slots](#slots) で埋まっている時間に数える。
-
 ### Booking
 
-当番日なら、今の時刻（JST）と表の予定ごとに比べ、次のとおり扱う。
+表の予定ごとに、今の時刻（JST）と比べて次のとおり扱う。
 
 | 状況 | 行うこと |
 | :-- | :-- |
-| セッションの開始より前 | ToolSearch を `{"query": "select:CronCreate", "max_results": 1}` で呼んで読み込み、CronCreate を下の引数で呼ぶ |
-| セッションの開始を過ぎ、予定の終わりより前 | 予約せず、すぐに [Monitoring Session](#monitoring-session) のとおりセッションを始める |
+| 予定の開始より前 | ToolSearch を `{"query": "select:CronCreate", "max_results": 1}` で呼んで読み込み、CronCreate を下の引数で呼ぶ |
+| 予定の開始を過ぎ、終わりより前 | 予約せず、すぐに [Monitoring Session](#monitoring-session) のとおりセッションを始める |
 | 予定の終わりを過ぎている | 予約もセッションもしない |
 
 ```json
@@ -87,14 +85,14 @@ Google Calendar の `list_events` を次の引数で呼ぶ。tech のカレン�
 | 名前 | `<予定> <今日の日付（YYYY-MM-DD）>` 。例： `[監視] 午前監視 2026-11-27` |
 | フォルダ | このコンピューター（[Start](#start) と同じ置き場に scratch のフォルダを作り、 `-w` を付けない） |
 | 指示のファイル | この実行の scratchpad に `監視を開始してください！` の 1 行だけを書く |
-| 追加の引数 | `--model claude-opus-5-5 --effort xhigh` |
+| 追加の引数 | [Start](#start) と同じ |
 | 固定 | しない |
 
 `claude agents --json --all` に同じ名前の `background` のセッションがあれば、始めない。CLI にログインしていなければ、始めずに「CLI へのログインが必要（ `claude auth login` ）」と報告する。
 
 ### Monitoring Report
 
-手順 1 を終えたら、次の表を示す。予約した行の「結果」には CronCreate が返した実行の時刻を、始めた行には `<id>` を、何もしなかった行にはその理由（当番日ではない、予定の終わりを過ぎている、同じ名前のセッションがある、始められなかった）を書く。予約は Do³ の会話が開いている間だけ届く。
+手順 1 を終えたら、次の表を示す。予約した行の「結果」には CronCreate が返した実行の時刻を、始めた行には `<id>` を、何もしなかった行にはその理由（当番日ではない、予定の終わりを過ぎている、同じ名前のセッションがある、始められなかった）を書く。
 
 ```markdown
 | 予定 | カレンダー | セッション | 結果 |
